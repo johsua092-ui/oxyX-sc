@@ -3,7 +3,7 @@
   BuildGui + TrowelTool fix
 ]]
 
--- ═══ SERVICES ════════════════════════════════
+-- --- SERVICES 
 local Players     = game:GetService("Players")
 local RunService  = game:GetService("RunService")
 local TweenSvc    = game:GetService("TweenService")
@@ -29,7 +29,7 @@ pcall(function()
     elseif isfolder       then EXE = "Executor" end
 end)
 
--- ═══ COLOURS ═════════════════════════════════
+-- --- COLOURS 
 local C = {
     BG0=Color3.fromRGB(5,3,18),    BG1=Color3.fromRGB(10,6,30),
     BG2=Color3.fromRGB(17,10,48),  BG3=Color3.fromRGB(28,17,68),
@@ -43,7 +43,7 @@ local C = {
     TXT2=Color3.fromRGB(90,72,138),
 }
 
--- ═══ HELPERS ═════════════════════════════════
+-- --- HELPERS 
 local function New(cls, props)
     local ok, i = pcall(Instance.new, cls)
     if not ok then return nil end
@@ -93,7 +93,7 @@ local function Notify(title, msg, dur)
     end) end)
 end
 
--- ═══ BLOCK DB ════════════════════════════════
+-- --- BLOCK DB 
 local DB = {
     {id=1,n="Back Wheel",cat="Wheels"},{id=2,n="Balloon Block",cat="Special"},
     {id=3,n="Bar",cat="Structure"},{id=4,n="Big Cannon",cat="Weapons"},
@@ -188,12 +188,12 @@ local function FindBlock(name)
     return DB[158]
 end
 
--- ═══════════════════════════════════════════════
+-- 
 -- DEBUG: Print semua RemoteEvent/Function di game
 -- Ini yang perlu kita tau untuk tau cara place block
--- ═══════════════════════════════════════════════
+-- 
 local function DebugGame()
-    print("\n[OxyX] ══════ BABFT DEBUG ══════")
+    print("\n[OxyX] ------ BABFT DEBUG ------")
     print("[OxyX] RS Children:")
     for _, v in ipairs(RS:GetChildren()) do
         print("  [RS]", v.ClassName, v.Name)
@@ -217,16 +217,16 @@ local function DebugGame()
             print("    buttons:", btns)
         end
     end
-    print("[OxyX] ══════════════════════════\n")
+    print("[OxyX] ------------------------══\n")
     Notify("Debug","Cek Console (F9) untuk detail!",5)
 end
 
--- ═══════════════════════════════════════════════
+-- 
 -- INVENTORY SCAN
 -- BABFT inventory = BuildGui ScreenGui
 -- Tombol block ada di BuildGui dengan nama = nama block (tanpa spasi)
 -- Contoh: "BalloonBlock", "BrickBlock", "WoodBlock"
--- ═══════════════════════════════════════════════
+-- 
 local INV = {}
 
 -- Map: nama DB (dengan spasi) → nama tombol di BuildGui (tanpa spasi)
@@ -273,7 +273,7 @@ local function ScanInventory()
     return cnt
 end
 
--- ═══════════════════════════════════════════════
+-- 
 -- BABFT PLACE ENGINE
 --
 -- Cara BABFT place block yang BENERAN:
@@ -281,7 +281,7 @@ end
 -- 2. Fire TrowelTool.OperationRF dengan operasi "Place"
 --    Format: RF:InvokeServer("Place", blockName, CFrame)
 --    ATAU klik tombol "Place" di TabletToolGui
--- ═══════════════════════════════════════════════
+-- 
 
 -- Dapatkan TrowelTool RF
 local function GetTrowelRF()
@@ -396,7 +396,7 @@ local function DoPlace(blockName, posIndex)
     return selected or placed
 end
 
--- ═══ PLACER ══════════════════════════════════
+-- --- PLACER ═
 local Placer = { delay=0.3, running=false, placed=0, failed=0 }
 
 function Placer:PlaceOne(blockDef, idx)
@@ -439,7 +439,7 @@ function Placer:Stop()
     Notify("Stop","Build dihentikan",2)
 end
 
--- ═══ FILE SYSTEM ════════════════════════════
+-- --- FILE SYSTEM ---------------------------═
 local function MkDir(f)
     if makefolder then pcall(function()
         if not isfolder(f) then makefolder(f) end
@@ -557,13 +557,13 @@ function SB.Run(shape,n,p)
     if #bl>0 then return {version="1.0",name="OxyX_"..shape,author=LP.Name,blocks=bl,welds={}} end
 end
 
--- ═══ STATE ═══════════════════════════════════
+-- --- STATE ══
 local St = {minimized=false, tab="Build", buildData=nil,
     sp={r=3,h=5,w=5,l=8}}
 
--- ═══════════════════════════════════════════════
+-- 
 -- UI
--- ═══════════════════════════════════════════════
+-- 
 local function BuildUI()
     pcall(function()
         local old = GP:FindFirstChild("OxyX_v10")
@@ -577,7 +577,7 @@ local function BuildUI()
         ZIndexBehavior=Enum.ZIndexBehavior.Sibling,Parent=GP})
     if not SG then Notify("Error","Gagal buat GUI",5); return end
 
-    -- Window 500×620
+    -- Window 500x620
     local MF = New("Frame",{Size=UDim2.new(0,500,0,620),
         Position=UDim2.new(0.5,-250,0.5,-310),
         BackgroundColor3=C.BG0,BorderSizePixel=0,
@@ -633,7 +633,7 @@ local function BuildUI()
         pcall(function() BG.Rotation = ba end)
     end)
 
-    -- ── HEADER 88px ──────────────────────────
+    -- -- HEADER 88px ----─
     local HDR = New("Frame",{Size=UDim2.new(1,0,0,88),
         BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=Inn})
     New("UICorner",{CornerRadius=UDim.new(0,16),Parent=HDR})
@@ -644,7 +644,7 @@ local function BuildUI()
     New("Frame",{Size=UDim2.new(1,0,0,20),Position=UDim2.new(0,0,1,-20),
         BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=HDR})
 
-    -- ── ASTOLFO ─────────────────────────────
+    -- -- ASTOLFO --------
     local AF = New("Frame",{Size=UDim2.new(0,70,0,70),
         Position=UDim2.new(0,12,0,9),BackgroundColor3=C.BG0,
         BorderSizePixel=0,ZIndex=15,Parent=HDR})
@@ -752,9 +752,9 @@ local function BuildUI()
     New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ClsB})
     New("UIStroke",{Color=C.RED,Thickness=1.5,Parent=ClsB})
 
-    -- ── TAB BAR (absolute position, tidak pakai UIListLayout) ─
+    -- -- TAB BAR (absolute position, tidak pakai UIListLayout) ─
     -- 500px - 12px padding = 488px
-    -- 6 tabs × 78px + 5 gaps × 4px = 488px  ✓
+    -- 6 tabs x 78px + 5 gaps x 4px = 488px  ✓
     local TabBG = New("Frame",{Size=UDim2.new(1,0,0,38),
         Position=UDim2.new(0,0,0,88),BackgroundColor3=C.BG1,
         BorderSizePixel=0,ZIndex=10,Parent=Inn})
@@ -807,7 +807,7 @@ local function BuildUI()
         Text="Inv:"..invCnt,TextColor3=C.LPRP,Font=Enum.Font.GothamBold,
         TextSize=11,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=15,Parent=SBar})
 
-    -- ── WIDGET FACTORIES ─────────────────────
+    -- -- WIDGET FACTORIES 
     local Pages = {}; local Tabs = {}
 
     local function Page(name)
@@ -1015,7 +1015,7 @@ local function BuildUI()
 
     local function FileBrowser(par, folder, ext, onLoad)
         local ac = ext==".build" and C.PRP or C.CYN
-        local ico = ext==".build" and "🏗" or "📄"
+        local ico = ext==".build" and "[BUILD]" or "[FILE]"
         local wrap = New("Frame",{Size=UDim2.new(1,0,0,168),
             BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,10),Parent=wrap})
@@ -1031,7 +1031,7 @@ local function BuildUI()
             TextXAlignment=Enum.TextXAlignment.Left,Parent=hs})
         local rb = New("TextButton",{Size=UDim2.new(0,66,0,20),
             Position=UDim2.new(1,-70,0.5,-10),BackgroundColor3=C.BG0,
-            BackgroundTransparency=.4,BorderSizePixel=0,Text="🔄 Refresh",
+            BackgroundTransparency=.4,BorderSizePixel=0,Text="[RELOAD] Refresh",
             TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=10,
             AutoButtonColor=false,Parent=hs})
         New("UICorner",{CornerRadius=UDim.new(0,5),Parent=rb})
@@ -1097,13 +1097,13 @@ local function BuildUI()
         return wrap
     end
 
-    -- ── TAB BUTTONS ──────────────────────────
+    -- -- TAB BUTTONS ----─
     local tabDefs = {
-        {n="Build",  lbl="🏗 Build"},
-        {n="Shapes", lbl="⬡ Shapes"},
-        {n="Convert",lbl="🔄 Convert"},
-        {n="Images", lbl="🖼 Images"},
-        {n="Blocks", lbl="📦 Blocks"},
+        {n="Build",  lbl="[BUILD] Build"},
+        {n="Shapes", lbl="# Shapes"},
+        {n="Convert",lbl="[RELOAD] Convert"},
+        {n="Images", lbl="[IMG] Images"},
+        {n="Blocks", lbl="[BOX] Blocks"},
         {n="Info",   lbl="⚙ Info"},
     }
 
@@ -1123,7 +1123,7 @@ local function BuildUI()
         StatLbl.Text = "✦  "..name.."  |  "..EXE
     end
 
-    -- 6 + 6×78 + 5×4 + 6 = 500px tepat
+    -- 6 + 6x78 + 5x4 + 6 = 500px tepat
     local TW, TG, TS = 78, 4, 6
     for i, td in ipairs(tabDefs) do
         local xpos = TS + (i-1)*(TW+TG)
@@ -1139,13 +1139,13 @@ local function BuildUI()
         b.MouseButton1Click:Connect(function() SwitchTab(td.n) end)
     end
 
-    -- ══════════════════════════════════════════
+    -- ---------
     -- PAGES
-    -- ══════════════════════════════════════════
+    -- ---------
 
     -- BUILD PAGE
     local BP = Page("Build")
-    Sec(BP,"📂  File .build  (folder: builds/)","")
+    Sec(BP,"[FOLDER]  File .build  (folder: builds/)","")
     FileBrowser(BP,"builds",".build",function(fname, content)
         local d, e = ParseBuild(content)
         if d then
@@ -1156,20 +1156,20 @@ local function BuildUI()
     end)
     Sec(BP,"✏  Paste .build Manual","")
     local bTB, _ = BigIn(BP,'{"version":"1.0","blocks":[...]}')
-    Btn(BP,"📋  Parse & Load",C.CYN,function()
+    Btn(BP,"[PASTE]  Parse & Load",C.CYN,function()
         local d, e = ParseBuild(bTB.Text)
         if d then
             St.buildData = d; ScanInventory()
             Notify("Loaded",d.name.." | "..#d.blocks.." blocks",3)
         else Notify("Error",e or "Gagal",3) end
-    end,"📋")
+    end,"[PASTE]")
 
     Sec(BP,"⚙  Opsi","")
     Slider(BP,"Delay per block (ms)",100,2000,300,function(v) Placer.delay=v/1000 end)
 
-    Sec(BP,"🔧  Debug","")
+    Sec(BP,"[TOOL]  Debug","")
     -- *** PENTING: tombol debug untuk cari remote ***
-    Btn(BP,"🧪  Test Place 1 Block",C.CYN,function()
+    Btn(BP,"[TEST]  Test Place 1 Block",C.CYN,function()
         ScanInventory()
         -- Cek BuildGui
         local bg = PGui:FindFirstChild("BuildGui")
@@ -1180,35 +1180,35 @@ local function BuildUI()
         local bd = FindBlock("Wood Block")
         local ok, name = Placer:PlaceOne(bd, 0)
         Notify("Test",name..(ok and " → dipilih!" or " → tidak ketemu di BuildGui"),3)
-    end,"🧪")
+    end,"[TEST]")
     -- Info cara pakai
-    Card(BP,"ℹ️  CARA PAKAI: 1) Masuk Build Mode di BABFT  2) Scan Inventory  3) Load .build  4) MULAI BUILD")
+    Card(BP,"i  CARA PAKAI: 1) Masuk Build Mode di BABFT  2) Scan Inventory  3) Load .build  4) MULAI BUILD")
 
-    Sec(BP,"🚀  Build","")
-    Btn(BP,"🎲  Generate Test Build (5×5 Platform)",C.BG3,function()
+    Sec(BP,"[LAUNCH]  Build","")
+    Btn(BP,"[DICE]  Generate Test Build (5x5 Platform)",C.BG3,function()
         local blocks = {}
         for x=0,4 do for z=0,4 do
             blocks[#blocks+1]={name="Wood Block",position={x=x*4,y=0,z=z*2}}
         end end
         St.buildData={version="1.0",name="Test_5x5",author=LP.Name,blocks=blocks,welds={}}
-        Notify("Test Build","5×5 platform siap! ("..#blocks.." blocks) Klik MULAI BUILD",3)
+        Notify("Test Build","5x5 platform siap! ("..#blocks.." blocks) Klik MULAI BUILD",3)
         StatLbl.Text="✅  Test_5x5  |  "..#blocks.." blocks"
-    end,"🎲")
+    end,"[DICE]")
     local _, bStatL = Card(BP,"Belum ada build. Load file .build atau Generate Test.")
     RunService.Heartbeat:Connect(function()
         if St.buildData then pcall(function()
-            bStatL.Text = "📦  "..(St.buildData.name or "?").."  |  "
+            bStatL.Text = "[BOX]  "..(St.buildData.name or "?").."  |  "
                 ..#St.buildData.blocks.." blocks"
             bStatL.TextColor3 = C.GRN
         end) end
     end)
-    Btn(BP,"▶▶  MULAI AUTO BUILD  ◀◀",C.GRN,function()
+    Btn(BP,">>  MULAI AUTO BUILD  <<",C.GRN,function()
         if not St.buildData then Notify("Error","Load .build dulu!",3); return end
         ScanInventory()
         local total = #St.buildData.blocks
         PBG.Visible = true; PLbl.Visible = true
         PFill.Size = UDim2.new(0,0,1,0)
-        StatLbl.Text = "🔨  Building 0/"..total
+        StatLbl.Text = "*  Building 0/"..total
         Placer:Build(St.buildData,function(i, tot, used, ok2)
             pcall(function()
                 Tw(PFill,{Size=UDim2.new(i/tot,0,1,0)},.1)
@@ -1219,53 +1219,53 @@ local function BuildUI()
                         pcall(function() PBG.Visible=false; PLbl.Visible=false end)
                     end)
                 else
-                    PLbl.Text = "🔨  ["..i.."/"..tot.."]  "..used
-                    StatLbl.Text = "🔨  ["..i.."/"..tot.."]"
+                    PLbl.Text = "*  ["..i.."/"..tot.."]  "..used
+                    StatLbl.Text = "*  ["..i.."/"..tot.."]"
                 end
             end)
         end)
     end,"▶")
     Btn(BP,"⏹  Stop Build",C.YLW,function() Placer:Stop() end,"⏹")
-    Btn(BP,"🗑  Hapus Data",C.RED,function()
+    Btn(BP,"[TRASH]  Hapus Data",C.RED,function()
         St.buildData = nil; bTB.Text = ""
         bStatL.Text = "Belum ada build."; bStatL.TextColor3 = C.TXT1
         StatLbl.Text = "✦  Ready  |  "..EXE
         Notify("Clear","Data dihapus",2)
-    end,"🗑")
+    end,"[TRASH]")
 
     -- SHAPES PAGE
     local ShP = Page("Shapes")
-    Sec(ShP,"⬡  Shape","")
+    Sec(ShP,"#  Shape","")
     local _, getShape = Dropdown(ShP,"Shape:",
         {"Ball","Cylinder","Platform","BoatHull"},"Platform")
     local bnames = {}
     for _, b in ipairs(DB) do bnames[#bnames+1] = b.n end
     local _, getSBlock = Dropdown(ShP,"Block:",bnames,"Wood Block")
-    Sec(ShP,"📐  Parameter","")
+    Sec(ShP,"*  Parameter","")
     Slider(ShP,"Radius",1,10,3,function(v) St.sp.r=v end)
     Slider(ShP,"Height",1,15,5,function(v) St.sp.h=v end)
     Slider(ShP,"Width",1,15,5,function(v) St.sp.w=v end)
     Slider(ShP,"Length",1,20,8,function(v) St.sp.l=v end)
-    Sec(ShP,"🔨  Aksi","")
+    Sec(ShP,"*  Aksi","")
     local _, prvL = Card(ShP,"Preview muncul di sini.")
-    Btn(ShP,"👁  Preview",C.CYN,function()
+    Btn(ShP,"*  Preview",C.CYN,function()
         local d = SB.Run(getShape(),getSBlock(),St.sp)
         if d then
             St.buildData = d
-            prvL.Text = "🔮  "..getShape().." | "..#d.blocks.." blk | "..getSBlock()
+            prvL.Text = "[MAGIC]  "..getShape().." | "..#d.blocks.." blk | "..getSBlock()
             prvL.TextColor3 = C.LPRP
             Notify("Preview","Siap! "..#d.blocks.." blocks",2)
         end
-    end,"👁")
-    Btn(ShP,"🚀  Build Shape",C.GRN,function()
+    end,"*")
+    Btn(ShP,"[LAUNCH]  Build Shape",C.GRN,function()
         local d = SB.Run(getShape(),getSBlock(),St.sp)
         if not d then Notify("Error","Gagal",3); return end
         St.buildData = d
         Placer:Build(d,function(i,tot,bn)
             if bn=="DONE" then Notify("Done","Shape selesai!",3) end
         end)
-    end,"🚀")
-    Btn(ShP,"💾  Simpan → builds/",C.PRP,function()
+    end,"[LAUNCH]")
+    Btn(ShP,"[SAVE]  Simpan → builds/",C.PRP,function()
         local d = SB.Run(getShape(),getSBlock(),St.sp)
         if d then
             local j = Ser(d.name, d.blocks)
@@ -1275,11 +1275,11 @@ local function BuildUI()
                 setclipboard(j); Notify("Copied","Clipboard",3)
             end
         end
-    end,"💾")
+    end,"[SAVE]")
 
     -- CONVERT PAGE
     local CP = Page("Convert")
-    Sec(CP,"📄  File .json  (folder: json/)","")
+    Sec(CP,"[FILE]  File .json  (folder: json/)","")
     FileBrowser(CP,"json",".json",function(fname, content)
         local d, e = ParseJSON(content)
         if d then
@@ -1289,13 +1289,13 @@ local function BuildUI()
     end)
     Sec(CP,"✏  Paste JSON","")
     local jTB, _ = BigIn(CP,"Paste JSON Roblox Studio...")
-    Btn(CP,"🔄  Convert",C.CYN,function()
+    Btn(CP,"[RELOAD]  Convert",C.CYN,function()
         local d, e = ParseJSON(jTB.Text)
         if d then St.buildData = d; Notify("Converted","→ "..#d.blocks.." blocks",3)
         else Notify("Error",e or "?",3) end
-    end,"🔄")
-    Sec(CP,"🚢  Export Kapal","")
-    Btn(CP,"🚢  Export Kapal → builds/",C.PRP,function()
+    end,"[RELOAD]")
+    Sec(CP,"[BOAT]  Export Kapal","")
+    Btn(CP,"[BOAT]  Export Kapal → builds/",C.PRP,function()
         task.spawn(function()
             local boat = nil
             for _, c in ipairs(WS:GetDescendants()) do
@@ -1329,11 +1329,11 @@ local function BuildUI()
                 end
             end
         end)
-    end,"🚢")
+    end,"[BOAT]")
 
     -- IMAGES PAGE
     local IP = Page("Images")
-    Sec(IP,"🖼  Preview & Decal","")
+    Sec(IP,"[IMG]  Preview & Decal","")
     local pC = New("Frame",{Size=UDim2.new(1,0,0,120),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=IP})
     New("UICorner",{CornerRadius=UDim.new(0,10),Parent=pC})
     New("UIStroke",{Color=C.BG3,Thickness=1.5,Parent=pC})
@@ -1341,20 +1341,20 @@ local function BuildUI()
     New("UICorner",{CornerRadius=UDim.new(0,8),Parent=pImg})
     New("UIStroke",{Color=C.PRP,Thickness=1,Parent=pImg})
     local pSt = New("TextLabel",{Size=UDim2.new(1,-122,0,15),Position=UDim2.new(0,118,0,8),BackgroundTransparency=1,Text="Belum ada",TextColor3=C.TXT2,Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,Parent=pC})
-    Sec(IP,"📥  Asset ID","")
+    Sec(IP,"[DL]  Asset ID","")
     local asTB, _ = InBox(IP,"rbxassetid:// atau angka...")
-    Btn(IP,"👁  Preview",C.CYN,function()
+    Btn(IP,"*  Preview",C.CYN,function()
         local id = asTB.Text
         if id == "" then Notify("Error","Masukkan ID!",3); return end
         local nid = id:match("^%d+$") and "rbxassetid://"..id or id
         pcall(function() pImg.Image = nid end)
         pSt.Text = "✅ "..nid; pSt.TextColor3 = C.GRN
         Notify("Image","OK",2)
-    end,"👁")
-    Sec(IP,"🎨  Apply Decal","")
+    end,"*")
+    Sec(IP,"*  Apply Decal","")
     local ptTB, _ = InBox(IP,"Nama Part di Workspace...")
     local _, getFace = Dropdown(IP,"Face:",{"Front","Back","Left","Right","Top","Bottom"},"Front")
-    Btn(IP,"🖼  Apply Decal",C.PRP,function()
+    Btn(IP,"[IMG]  Apply Decal",C.PRP,function()
         local id = asTB.Text; local pn = ptTB.Text
         if id=="" or pn=="" then Notify("Error","Isi ID dan nama Part!",3); return end
         local part = WS:FindFirstChild(pn,true)
@@ -1367,20 +1367,20 @@ local function BuildUI()
             d.Parent = part
         end)
         Notify("Decal","Diterapkan ke "..pn,3)
-    end,"🖼")
+    end,"[IMG]")
 
     -- BLOCKS PAGE
     local BkP = Page("Blocks")
-    Sec(BkP,"📋  Inventory","")
+    Sec(BkP,"[PASTE]  Inventory","")
     local _, invL = Card(BkP,"Klik Scan untuk baca inventory BABFT.")
-    Btn(BkP,"🔄  Scan Inventory",C.CYN,function()
+    Btn(BkP,"[RELOAD]  Scan Inventory",C.CYN,function()
         local cnt = ScanInventory()
         invL.Text = "✅  "..cnt.." jenis block di inventory-mu"
         invL.TextColor3 = C.GRN
         InvLbl.Text = "Inv:"..cnt
         Notify("Inv",cnt.." block",3)
-    end,"🔄")
-    Sec(BkP,"📦  159 Blocks","")
+    end,"[RELOAD]")
+    Sec(BkP,"[BOX]  159 Blocks","")
     local sTB, _ = InBox(BkP,"Cari block...")
     local catL = {"Semua"}; local cs = {}
     for _, b in ipairs(DB) do
@@ -1457,9 +1457,9 @@ local function BuildUI()
     sTB.Changed:Connect(function(p)
         if p=="Text" then pcall(function() RBlk(sTB.Text,getCat()) end) end
     end)
-    Btn(BkP,"🔄  Refresh",C.CYN,function()
+    Btn(BkP,"[RELOAD]  Refresh",C.CYN,function()
         RBlk(sTB.Text,getCat()); Notify("Refresh","OK",2)
-    end,"🔄")
+    end,"[RELOAD]")
 
     -- INFO PAGE
     local InfoP = Page("Info")
@@ -1474,7 +1474,7 @@ local function BuildUI()
         {"OxyX BABFT v10.0 — GALAXY",Enum.Font.GothamBold,14,C.WHT},
         {"Tab fix | Astolfo crossfade | Debug tools",Enum.Font.GothamBold,10,C.LPRP},
         {"EXE: "..EXE,Enum.Font.Gotham,10,C.CYN},
-        {"Tekan 🔍 Debug di Build tab!",Enum.Font.Gotham,10,C.YLW},
+        {"Tekan [SEARCH] Debug di Build tab!",Enum.Font.Gotham,10,C.YLW},
     }) do
         New("TextLabel",{Size=UDim2.new(1,-103,0,18),
             Position=UDim2.new(0,100,0,2+(i-1)*22),
@@ -1482,28 +1482,28 @@ local function BuildUI()
             Font=ln[2],TextSize=ln[3],
             TextXAlignment=Enum.TextXAlignment.Left,Parent=aF})
     end
-    Sec(InfoP,"⌨  Hotkeys","")
+    Sec(InfoP,"  Hotkeys","")
     for _, hk in ipairs({{"Right Shift","Toggle UI"},{"Ctrl+B","Quick Build"},{"Ctrl+R","Reset"}}) do
         local hF = New("Frame",{Size=UDim2.new(1,0,0,22),BackgroundTransparency=1,Parent=InfoP})
         local kb = New("TextLabel",{Size=UDim2.new(0,86,0,18),BackgroundColor3=C.DPRP,BorderSizePixel=0,Text=hk[1],TextColor3=C.LPRP,Font=Enum.Font.Code,TextSize=9,Parent=hF})
         New("UICorner",{CornerRadius=UDim.new(0,4),Parent=kb})
         New("TextLabel",{Size=UDim2.new(1,-94,1,0),Position=UDim2.new(0,92,0,0),BackgroundTransparency=1,Text=hk[2],TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,Parent=hF})
     end
-    Btn(InfoP,"📋  Copy GitHub URL",C.CYN,function()
+    Btn(InfoP,"[PASTE]  Copy GitHub URL",C.CYN,function()
         if setclipboard then
             setclipboard("https://raw.githubusercontent.com/johsua092-ui/oxyX-sc/refs/heads/main/OxyX_BABFT.lua")
             Notify("GitHub","URL di-copy!",3)
         end
-    end,"📋")
-    Btn(InfoP,"🔄  Reload",C.PRP,function()
+    end,"[PASTE]")
+    Btn(InfoP,"[RELOAD]  Reload",C.PRP,function()
         Notify("Reload","...",2)
         task.delay(.35,function()
             pcall(function() bconn:Disconnect(); SG:Destroy() end)
             BuildUI()
         end)
-    end,"🔄")
+    end,"[RELOAD]")
 
-    -- ── DRAG ─────────────────────────────────
+    -- -- DRAG 
     local drg = false; local dO = Vector2.new(0,0)
     HDR.InputBegan:Connect(function(i)
         if i.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -1572,7 +1572,7 @@ local function BuildUI()
         end)
     end)
 
-    Notify("OxyX v10.0 🌌","Loaded! Klik 🔍 Debug dulu untuk cari remote BABFT.",5)
+    Notify("OxyX v10.0 [GALAXY]","Loaded! Klik [SEARCH] Debug dulu untuk cari remote BABFT.",5)
     print("[OxyX v10.0] ✅ EXE:"..EXE)
 end
 
