@@ -1,6 +1,6 @@
 --[[
-  OxyX BABFT v9  —  GALAXY EDITION
-  Rewrite bersih — logika build yang benar
+  OxyX BABFT v10.0  —  GALAXY EDITION
+  BuildGui + TrowelTool fix
 ]]
 
 -- ═══ SERVICES ════════════════════════════════
@@ -1168,11 +1168,7 @@ local function BuildUI()
         Notify("Test",name..(ok and " → dipilih!" or " → tidak ketemu di BuildGui"),3)
     end,"🧪")
     -- Info cara pakai
-    Card(BP,"ℹ️  CARA PAKAI BUILD:
-1. Di BABFT, buka Build Mode (klik tombol build)
-2. Klik Scan Inventory di tab Blocks
-3. Load file .build
-4. Klik MULAI AUTO BUILD")
+    Card(BP,"ℹ️  CARA PAKAI: 1) Masuk Build Mode di BABFT  2) Scan Inventory  3) Load .build  4) MULAI BUILD")
 
     Sec(BP,"🚀  Build","")
     local _, bStatL = Card(BP,"Belum ada build. Load file .build di atas.")
