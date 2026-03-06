@@ -241,39 +241,16 @@ end
 
 local function ScanInventory()
     INV = {}
-    local bg = GetBuildGui()
-    if not bg then
-        -- Fallback defaults
-        for _, n in ipairs({"Wood Block","Metal Block","Stone Block","Glass Block",
-            "Plastic Block","Brick Block","Thruster","Boat Motor","Wheel",
-            "Front Wheel","Back Wheel","Cannon","Button","Switch","Helm"}) do
-            local b = FindBlock(n)
-            if b then INV[b.n] = {block=b} end
-        end
-        local cnt = 0; for _ in pairs(INV) do cnt=cnt+1 end
-        return cnt
-    end
 
-    -- Scan semua tombol di BuildGui
-    for _, obj in ipairs(bg:GetDescendants()) do
-        if obj:IsA("ImageButton") or obj:IsA("TextButton") then
-            -- Coba match nama tombol ke block DB
-            -- BABFT: nama tombol = nama block tanpa spasi
-            local btnName = obj.Name  -- e.g. "WoodBlock"
-            -- Cari di DB: nama block tanpa spasi = btnName
-            for _, b in ipairs(DB) do
-                if ToButtonName(b.n) == btnName then
-                    if not INV[b.n] then
-                        INV[b.n] = {block=b, btn=obj}
-                    end
-                    break
-                end
-            end
-            -- Juga coba lowercase match
-            if not INV[btnName] then
-                local lo = btnName:lower()
+    -- Step 1: Coba scan BuildGui untuk dapat referensi tombol
+    local bg = GetBuildGui()
+    if bg then
+        for _, obj in ipairs(bg:GetDescendants()) do
+            if obj:IsA("ImageButton") or obj:IsA("TextButton") then
+                local btnName = obj.Name
                 for _, b in ipairs(DB) do
-                    if ToButtonName(b.n):lower() == lo then
+                    if ToButtonName(b.n) == btnName or
+                       ToButtonName(b.n):lower() == btnName:lower() then
                         if not INV[b.n] then
                             INV[b.n] = {block=b, btn=obj}
                         end
@@ -281,6 +258,14 @@ local function ScanInventory()
                     end
                 end
             end
+        end
+    end
+
+    -- Step 2: Isi semua 159 block yang belum ada di INV
+    -- (User punya semua block, jadi kita assume semua tersedia)
+    for _, b in ipairs(DB) do
+        if not INV[b.n] then
+            INV[b.n] = {block=b}
         end
     end
 
@@ -490,11 +475,40 @@ local function WrF(path, content)
     return false
 end
 local function ParseBuild(txt)
-    if txt == "" then return nil, "Kosong" end
+    if not txt or txt:match("^%s*$") then return nil, "File kosong" end
     local ok, d = pcall(function() return Http:JSONDecode(txt) end)
-    if not ok or type(d) ~= "table" then return nil, "Bukan JSON valid" end
-    if not d.blocks or #d.blocks == 0 then return nil, "Tidak ada blocks" end
-    return d
+    if not ok or type(d) ~= "table" then
+        return nil, "Format tidak valid. File harus JSON .build"
+    end
+    -- Format 1: {version, blocks:[...]}
+    if d.blocks and #d.blocks > 0 then return d end
+    -- Format 2: array langsung [{name,position,...}, ...]
+    if d[1] and (d[1].name or d[1].Name or d[1].block) then
+        local blocks = {}
+        for _, bi in ipairs(d) do
+            blocks[#blocks+1] = {
+                name = bi.name or bi.Name or bi.block or "Wood Block",
+                position = bi.position or bi.Position or {x=0,y=5,z=0},
+            }
+        end
+        return {version="1.0", name="Import", author=LP.Name, blocks=blocks, welds={}}
+    end
+    -- Format 3: coba cari field blocks dengan nama berbeda
+    for k, v in pairs(d) do
+        if type(v) == "table" and #v > 0 and type(v[1]) == "table" then
+            if v[1].name or v[1].Name or v[1].block or v[1].BlockName then
+                local blocks = {}
+                for _, bi in ipairs(v) do
+                    blocks[#blocks+1] = {
+                        name = bi.name or bi.Name or bi.block or bi.BlockName or "Wood Block",
+                        position = bi.position or bi.Position or {x=0,y=5,z=0},
+                    }
+                end
+                return {version="1.0", name=tostring(k), author=LP.Name, blocks=blocks, welds={}}
+            end
+        end
+    end
+    return nil, "Tidak ada blocks ditemukan di file. Format: {"blocks":[{"name":"Wood Block",...}]}"
 end
 local function ParseJSON(txt)
     if txt == "" then return nil, "Kosong" end
@@ -1171,7 +1185,16 @@ local function BuildUI()
     Card(BP,"ℹ️  CARA PAKAI: 1) Masuk Build Mode di BABFT  2) Scan Inventory  3) Load .build  4) MULAI BUILD")
 
     Sec(BP,"🚀  Build","")
-    local _, bStatL = Card(BP,"Belum ada build. Load file .build di atas.")
+    Btn(BP,"🎲  Generate Test Build (5×5 Platform)",C.BG3,function()
+        local blocks = {}
+        for x=0,4 do for z=0,4 do
+            blocks[#blocks+1]={name="Wood Block",position={x=x*4,y=0,z=z*2}}
+        end end
+        St.buildData={version="1.0",name="Test_5x5",author=LP.Name,blocks=blocks,welds={}}
+        Notify("Test Build","5×5 platform siap! ("..#blocks.." blocks) Klik MULAI BUILD",3)
+        StatLbl.Text="✅  Test_5x5  |  "..#blocks.." blocks"
+    end,"🎲")
+    local _, bStatL = Card(BP,"Belum ada build. Load file .build atau Generate Test.")
     RunService.Heartbeat:Connect(function()
         if St.buildData then pcall(function()
             bStatL.Text = "📦  "..(St.buildData.name or "?").."  |  "
