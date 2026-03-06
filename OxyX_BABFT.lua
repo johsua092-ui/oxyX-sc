@@ -1,4 +1,4 @@
---[[
+  --[[
   OxyX BABFT Tool v5.0 — GALAXY EDITION
   Fix: Tab layout, inventory build, Astolfo animated
 ]]
@@ -8,7 +8,7 @@ local RunService   = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local UIS          = game:GetService("UserInputService")
 local Http         = game:GetService("HttpService")
-local WS           = game:GetService("Workspace")
+local WS           = game:GetService("Workspace")    
 local RS           = game:GetService("ReplicatedStorage")
 
 local GP
@@ -1359,3 +1359,44 @@ if not ok then
         game:GetService("Debris"):AddItem(fg,12)
     end)
 end
+
+    -- ═══ ASTOLFO ANIMATED GIF ═════════════════════
+
+local AstolfoGui=Instance.new("ScreenGui")
+AstolfoGui.Name="AstolfoWidget"
+AstolfoGui.Parent=PGui
+AstolfoGui.ResetOnSpawn=false
+
+local AstolfoFrame=Instance.new("Frame")
+AstolfoFrame.Size=UDim2.new(0,120,0,120)
+AstolfoFrame.Position=UDim2.new(1,-130,1,-140)
+AstolfoFrame.BackgroundTransparency=1
+AstolfoFrame.Parent=AstolfoGui
+
+local AstolfoImage=Instance.new("ImageLabel")
+AstolfoImage.Size=UDim2.new(1,0,1,0)
+AstolfoImage.BackgroundTransparency=1
+AstolfoImage.Parent=AstolfoFrame
+
+local Frames={
+"rbxassetid://10265359325",
+"rbxassetid://10265359346",
+"rbxassetid://10265359361",
+"rbxassetid://10265359378"
+}
+
+task.spawn(function()
+    local i=1
+    while AstolfoImage.Parent do
+
+        AstolfoImage.Image=Frames[i]
+
+        i=i+1
+        if i>#Frames then
+            i=1
+        end
+
+        task.wait(0.12)
+
+    end
+end)
