@@ -1,86 +1,100 @@
 --[[
-  OxyX BABFT Tool v5.0 — GALAXY EDITION
-  Fix: Tab layout, inventory build, Astolfo animated
+  OxyX BABFT v9  —  GALAXY EDITION
+  Rewrite bersih — logika build yang benar
 ]]
 
-local Players      = game:GetService("Players")
-local RunService   = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local UIS          = game:GetService("UserInputService")
-local Http         = game:GetService("HttpService")
-local WS           = game:GetService("Workspace")
-local RS           = game:GetService("ReplicatedStorage")
+-- ═══ SERVICES ════════════════════════════════
+local Players     = game:GetService("Players")
+local RunService  = game:GetService("RunService")
+local TweenSvc    = game:GetService("TweenService")
+local UIS         = game:GetService("UserInputService")
+local Http        = game:GetService("HttpService")
+local WS          = game:GetService("Workspace")
+local RS          = game:GetService("ReplicatedStorage")
 
-local GP
-pcall(function() GP = game:GetService("CoreGui") end)
+local GP; pcall(function() GP = game:GetService("CoreGui") end)
 if not GP then GP = Players.LocalPlayer:WaitForChild("PlayerGui") end
 
-local LP   = Players.LocalPlayer
-local PGui = LP:WaitForChild("PlayerGui")
-local Mouse= LP:GetMouse()
-local Cam  = WS.CurrentCamera
+local LP    = Players.LocalPlayer
+local PGui  = LP:WaitForChild("PlayerGui")
+local Mouse = LP:GetMouse()
+local Cam   = WS.CurrentCamera
 
 local EXE = "Unknown"
 pcall(function()
-    if identifyexecutor  then EXE = identifyexecutor()
-    elseif syn           then EXE = "Synapse X"
-    elseif KRNL_LOADED   then EXE = "KRNL"
+    if identifyexecutor   then EXE = identifyexecutor()
+    elseif syn            then EXE = "Synapse X"
+    elseif KRNL_LOADED    then EXE = "KRNL"
     elseif getexecutorname then EXE = getexecutorname()
-    elseif isfolder      then EXE = "Executor" end
+    elseif isfolder       then EXE = "Executor" end
 end)
 
--- ═══ COLOURS ═══════════════════════════════════
-local C={
-    BG0=Color3.fromRGB(5,3,18),   BG1=Color3.fromRGB(10,6,30),
-    BG2=Color3.fromRGB(17,10,48), BG3=Color3.fromRGB(28,17,68),
-    PRP=Color3.fromRGB(140,44,230),  DPRP=Color3.fromRGB(70,0,130),
-    LPRP=Color3.fromRGB(190,110,255),CYN=Color3.fromRGB(0,205,255),
-    PNK=Color3.fromRGB(255,95,180),  GLD=Color3.fromRGB(255,200,55),
-    GRN=Color3.fromRGB(70,225,115),  RED=Color3.fromRGB(255,65,65),
-    YLW=Color3.fromRGB(255,210,50),  WHT=Color3.fromRGB(255,255,255),
+-- ═══ COLOURS ═════════════════════════════════
+local C = {
+    BG0=Color3.fromRGB(5,3,18),    BG1=Color3.fromRGB(10,6,30),
+    BG2=Color3.fromRGB(17,10,48),  BG3=Color3.fromRGB(28,17,68),
+    PRP=Color3.fromRGB(140,44,230),DPRP=Color3.fromRGB(70,0,130),
+    LPRP=Color3.fromRGB(190,110,255),
+    CYN=Color3.fromRGB(0,205,255), PNK=Color3.fromRGB(255,95,180),
+    GLD=Color3.fromRGB(255,200,55),GRN=Color3.fromRGB(70,225,115),
+    RED=Color3.fromRGB(255,65,65), YLW=Color3.fromRGB(255,210,50),
+    WHT=Color3.fromRGB(255,255,255),
     TXT0=Color3.fromRGB(238,228,255),TXT1=Color3.fromRGB(165,148,215),
     TXT2=Color3.fromRGB(90,72,138),
 }
 
--- ═══ HELPERS ════════════════════════════════════
-local function New(cls,props)
-    local ok,i=pcall(Instance.new,cls)
+-- ═══ HELPERS ═════════════════════════════════
+local function New(cls, props)
+    local ok, i = pcall(Instance.new, cls)
     if not ok then return nil end
-    for k,v in pairs(props) do
-        if k~="Parent" then pcall(function() i[k]=v end) end
+    for k, v in pairs(props) do
+        if k ~= "Parent" then pcall(function() i[k] = v end) end
     end
-    if props.Parent then pcall(function() i.Parent=props.Parent end) end
+    if props.Parent then pcall(function() i.Parent = props.Parent end) end
     return i
 end
-local function Tw(o,g,t,es)
+local function Tw(o, g, t, es)
     if not o or not o.Parent then return end
     pcall(function()
-        TweenService:Create(o,TweenInfo.new(t or .25,es or Enum.EasingStyle.Quad,Enum.EasingDirection.Out),g):Play()
+        TweenSvc:Create(o, TweenInfo.new(t or .25,
+            es or Enum.EasingStyle.Quad, Enum.EasingDirection.Out), g):Play()
     end)
 end
-local function Notify(title,msg,dur)
-    dur=dur or 3
+local function Notify(title, msg, dur)
+    dur = dur or 3
     task.spawn(function() pcall(function()
-        local ng=New("ScreenGui",{Name="OxN"..tick(),ResetOnSpawn=false,DisplayOrder=99999,IgnoreGuiInset=true,Parent=GP})
-        local nf=New("Frame",{Size=UDim2.new(0,288,0,66),Position=UDim2.new(1,10,1,-86),BackgroundColor3=C.BG1,BorderSizePixel=0,Parent=ng})
+        local ng = New("ScreenGui",{Name="OxN"..tick(),ResetOnSpawn=false,
+            DisplayOrder=99999,IgnoreGuiInset=true,Parent=GP})
+        local nf = New("Frame",{Size=UDim2.new(0,290,0,66),
+            Position=UDim2.new(1,10,1,-84),BackgroundColor3=C.BG1,
+            BorderSizePixel=0,Parent=ng})
         New("UICorner",{CornerRadius=UDim.new(0,12),Parent=nf})
         New("UIStroke",{Color=C.PRP,Thickness=1.5,Parent=nf})
-        local lb=New("Frame",{Size=UDim2.new(0,4,0.76,0),Position=UDim2.new(0,0,0.12,0),BackgroundColor3=C.LPRP,BorderSizePixel=0,Parent=nf})
-        New("UICorner",{CornerRadius=UDim.new(1,0),Parent=lb})
-        New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,C.CYN),ColorSequenceKeypoint.new(1,C.PRP)}),Rotation=90,Parent=lb})
-        New("TextLabel",{Size=UDim2.new(1,-14,0,20),Position=UDim2.new(0,10,0,4),BackgroundTransparency=1,Text="✦ "..title,TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=13,TextXAlignment=Enum.TextXAlignment.Left,Parent=nf})
-        New("TextLabel",{Size=UDim2.new(1,-14,0,30),Position=UDim2.new(0,10,0,24),BackgroundTransparency=1,Text=msg,TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=11,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Left,Parent=nf})
-        local pg=New("Frame",{Size=UDim2.new(1,-6,0,3),Position=UDim2.new(0,3,1,-3),BackgroundColor3=C.PRP,BorderSizePixel=0,Parent=nf})
+        New("Frame",{Size=UDim2.new(0,4,0.76,0),Position=UDim2.new(0,0,0.12,0),
+            BackgroundColor3=C.LPRP,BorderSizePixel=0,Parent=nf})
+        New("TextLabel",{Size=UDim2.new(1,-14,0,20),Position=UDim2.new(0,10,0,4),
+            BackgroundTransparency=1,Text="✦ "..title,TextColor3=C.LPRP,
+            Font=Enum.Font.GothamBold,TextSize=13,
+            TextXAlignment=Enum.TextXAlignment.Left,Parent=nf})
+        New("TextLabel",{Size=UDim2.new(1,-14,0,32),Position=UDim2.new(0,10,0,24),
+            BackgroundTransparency=1,Text=msg,TextColor3=C.TXT1,
+            Font=Enum.Font.Gotham,TextSize=11,TextWrapped=true,
+            TextXAlignment=Enum.TextXAlignment.Left,Parent=nf})
+        local pg = New("Frame",{Size=UDim2.new(1,-6,0,3),
+            Position=UDim2.new(0,3,1,-3),BackgroundColor3=C.PRP,
+            BorderSizePixel=0,Parent=nf})
         New("UICorner",{CornerRadius=UDim.new(1,0),Parent=pg})
-        New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,C.PRP),ColorSequenceKeypoint.new(1,C.CYN)}),Parent=pg})
-        Tw(nf,{Position=UDim2.new(1,-298,1,-86)},.3)
+        Tw(nf,{Position=UDim2.new(1,-300,1,-84)},.3)
         Tw(pg,{Size=UDim2.new(0,0,0,3)},dur)
-        task.delay(dur,function() pcall(function() Tw(nf,{Position=UDim2.new(1,10,1,-86)},.25) task.wait(.28) ng:Destroy() end) end)
+        task.delay(dur, function() pcall(function()
+            Tw(nf,{Position=UDim2.new(1,10,1,-84)},.25)
+            task.wait(.28); ng:Destroy()
+        end) end)
     end) end)
 end
 
--- ═══ BLOCK DB ═══════════════════════════════════
-local DB={
+-- ═══ BLOCK DB ════════════════════════════════
+local DB = {
     {id=1,n="Back Wheel",cat="Wheels"},{id=2,n="Balloon Block",cat="Special"},
     {id=3,n="Bar",cat="Structure"},{id=4,n="Big Cannon",cat="Weapons"},
     {id=5,n="Big Switch",cat="Electronics"},{id=6,n="Blue Candy",cat="Candy"},
@@ -162,486 +176,415 @@ local DB={
     {id=157,n="Winter Thruster",cat="Propulsion"},{id=158,n="Wood Block",cat="Structure"},
     {id=159,n="Wood Rod",cat="Structure"},
 }
-local DBlo={}
-for _,b in ipairs(DB) do DBlo[b.n:lower()]=b end
+local DBlo = {}
+for _, b in ipairs(DB) do DBlo[b.n:lower()] = b end
 local function FindBlock(name)
     if not name then return DB[158] end
-    local lo=name:lower()
+    local lo = name:lower()
     if DBlo[lo] then return DBlo[lo] end
-    for k,v in pairs(DBlo) do
+    for k, v in pairs(DBlo) do
         if k:find(lo,1,true) or lo:find(k,1,true) then return v end
     end
     return DB[158]
 end
 
--- ═══ INVENTORY ══════════════════════════════════
--- Inventory BABFT: block yang player punya disimpan sebagai:
--- 1. Tombol di ScreenGui "BlocksGui" / "InventoryGui" (ImageButton dengan Name = block name)
--- 2. Kadang IntValue di LP.Data.Blocks atau LP.PlayerData
--- Cara place: BABFT pakai RemoteEvent "PlaceBlock" dengan parameter {Name=blockName}
--- ATAU klik langsung tombol block-nya
+-- ═══════════════════════════════════════════════
+-- DEBUG: Print semua RemoteEvent/Function di game
+-- Ini yang perlu kita tau untuk tau cara place block
+-- ═══════════════════════════════════════════════
+local function DebugGame()
+    print("\n[OxyX] ══════ BABFT DEBUG ══════")
+    print("[OxyX] RS Children:")
+    for _, v in ipairs(RS:GetChildren()) do
+        print("  [RS]", v.ClassName, v.Name)
+    end
+    print("[OxyX] RS RemoteEvents/Functions:")
+    for _, v in ipairs(RS:GetDescendants()) do
+        if v:IsA("RemoteEvent") or v:IsA("RemoteFunction") then
+            print("  [Remote]", v.ClassName, v:GetFullName())
+        end
+    end
+    print("[OxyX] PlayerGui ScreenGuis:")
+    for _, gui in ipairs(PGui:GetChildren()) do
+        if gui:IsA("ScreenGui") then
+            print("  [GUI]", gui.Name, "| Enabled:", gui.Enabled)
+            local btns = 0
+            for _, obj in ipairs(gui:GetDescendants()) do
+                if obj:IsA("ImageButton") or obj:IsA("TextButton") then
+                    btns = btns + 1
+                end
+            end
+            print("    buttons:", btns)
+        end
+    end
+    print("[OxyX] ══════════════════════════\n")
+    Notify("Debug","Cek Console (F9) untuk detail!",5)
+end
 
-local INV={}  -- { [blockName] = { block=DB, btn=GuiObj, count=N } }
+-- ═══════════════════════════════════════════════
+-- INVENTORY SCAN
+-- BABFT inventory = BuildGui ScreenGui
+-- Tombol block ada di BuildGui dengan nama = nama block (tanpa spasi)
+-- Contoh: "BalloonBlock", "BrickBlock", "WoodBlock"
+-- ═══════════════════════════════════════════════
+local INV = {}
+
+-- Map: nama DB (dengan spasi) → nama tombol di BuildGui (tanpa spasi)
+-- Contoh: "Wood Block" → "WoodBlock", "Balloon Block" → "BalloonBlock"
+local function ToButtonName(blockName)
+    return blockName:gsub("%s+", "")
+end
+
+local function GetBuildGui()
+    return PGui:FindFirstChild("BuildGui")
+end
 
 local function ScanInventory()
-    INV={}
+    INV = {}
+    local bg = GetBuildGui()
+    if not bg then
+        -- Fallback defaults
+        for _, n in ipairs({"Wood Block","Metal Block","Stone Block","Glass Block",
+            "Plastic Block","Brick Block","Thruster","Boat Motor","Wheel",
+            "Front Wheel","Back Wheel","Cannon","Button","Switch","Helm"}) do
+            local b = FindBlock(n)
+            if b then INV[b.n] = {block=b} end
+        end
+        local cnt = 0; for _ in pairs(INV) do cnt=cnt+1 end
+        return cnt
+    end
 
-    -- METHOD 1: Cari RemoteFunction GetInventory / GetBlocks dari BABFT server
-    for _,v in ipairs(RS:GetDescendants()) do
-        if v:IsA("RemoteFunction") then
-            local lo=v.Name:lower()
-            if lo:find("getinv") or lo:find("getblock") or lo:find("owned") or lo:find("inventory") then
-                pcall(function()
-                    local result=v:InvokeServer()
-                    if type(result)=="table" then
-                        for k,val in pairs(result) do
-                            local name=type(k)=="string" and k or (type(val)=="string" and val) or nil
-                            if name then
-                                local bd=FindBlock(name)
-                                if bd then INV[bd.n]={block=bd,count=type(val)=="number" and val or 99} end
-                            end
+    -- Scan semua tombol di BuildGui
+    for _, obj in ipairs(bg:GetDescendants()) do
+        if obj:IsA("ImageButton") or obj:IsA("TextButton") then
+            -- Coba match nama tombol ke block DB
+            -- BABFT: nama tombol = nama block tanpa spasi
+            local btnName = obj.Name  -- e.g. "WoodBlock"
+            -- Cari di DB: nama block tanpa spasi = btnName
+            for _, b in ipairs(DB) do
+                if ToButtonName(b.n) == btnName then
+                    if not INV[b.n] then
+                        INV[b.n] = {block=b, btn=obj}
+                    end
+                    break
+                end
+            end
+            -- Juga coba lowercase match
+            if not INV[btnName] then
+                local lo = btnName:lower()
+                for _, b in ipairs(DB) do
+                    if ToButtonName(b.n):lower() == lo then
+                        if not INV[b.n] then
+                            INV[b.n] = {block=b, btn=obj}
                         end
-                    end
-                end)
-            end
-        end
-    end
-
-    -- METHOD 2: Scan semua ScreenGui BABFT untuk ImageButton/TextButton per block
-    -- BABFT inventory = tombol dengan Name persis sama dengan nama block
-    for _,gui in ipairs(PGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and not gui.Name:match("OxyX") then
-            for _,obj in ipairs(gui:GetDescendants()) do
-                if obj:IsA("ImageButton") or obj:IsA("TextButton") then
-                    local exact=DBlo[obj.Name:lower()]
-                    if exact and not INV[exact.n] then
-                        local vis=true
-                        pcall(function() vis=obj.Visible and obj.Active~=false end)
-                        if vis then INV[exact.n]={block=exact,btn=obj} end
+                        break
                     end
                 end
             end
         end
     end
 
-    -- METHOD 3: IntValue/NumberValue di LP children
-    for _,child in ipairs(LP:GetChildren()) do
-        pcall(function()
-            for _,v in ipairs(child:GetDescendants()) do
-                local exact=DBlo[v.Name:lower()]
-                if exact and not INV[exact.n] then
-                    if (v:IsA("IntValue") or v:IsA("NumberValue")) and v.Value>0 then
-                        INV[exact.n]={block=exact,count=v.Value}
-                    end
-                end
-            end
-        end)
-    end
-
-    -- FALLBACK jika tidak ada yang ketemu
-    if not next(INV) then
-        local defaults={"Wood Block","Metal Block","Stone Block","Glass Block","Plastic Block",
-            "Brick Block","Concrete Block","Smooth Wood Block","Fabric Block",
-            "Thruster","Boat Motor","Wheel","Front Wheel","Back Wheel","Helm",
-            "Cannon","Button","Switch","Seat","Pilot Seat"}
-        for _,n in ipairs(defaults) do
-            local b=FindBlock(n); if b then INV[b.n]={block=b,count=99} end
-        end
-    end
-
-    local cnt=0; for _ in pairs(INV) do cnt=cnt+1 end
+    local cnt = 0; for _ in pairs(INV) do cnt=cnt+1 end
     return cnt
 end
 
--- ══════════════════════════════════════════════════════
--- BABFT REMOTE SPY + PLACER
--- ══════════════════════════════════════════════════════
--- Cara kerja:
--- 1. Hook semua RemoteEvent di RS pakai mt.__newindex / getconnections
--- 2. Saat player place block manual pertama kali → tangkap args-nya
--- 3. Simpan sebagai template → replicate untuk auto-build
+-- ═══════════════════════════════════════════════
+-- BABFT PLACE ENGINE
 --
--- BABFT pakai RemoteEvent bernama "RemoteEvent" (generic) di dalam
--- folder ReplicatedStorage atau langsung. Args format:
---   RemoteEvent:FireServer("PlaceBlock", blockName, colorInfo, positionInfo)
--- ATAU pakai BindableEvent/RemoteFunction tergantung versi game.
--- Spy akan otomatis deteksi format yang benar.
+-- Cara BABFT place block yang BENERAN:
+-- 1. Klik tombol block di BuildGui (select block)
+-- 2. Fire TrowelTool.OperationRF dengan operasi "Place"
+--    Format: RF:InvokeServer("Place", blockName, CFrame)
+--    ATAU klik tombol "Place" di TabletToolGui
+-- ═══════════════════════════════════════════════
 
--- Captured template dari spy
-local SpyData = {
-    remote     = nil,   -- RemoteEvent yang dipakai BABFT
-    args       = nil,   -- args template (captured dari place manual pertama)
-    blockArgIdx= nil,   -- index arg mana yang berisi nama block
-    ready      = false, -- sudah siap dipakai?
-    log        = {},    -- log semua remote yang dideteksi
-}
-
--- Hook RemoteEvent:FireServer pakai mt
--- Ini menangkap SEMUA FireServer calls dari LocalScript BABFT
-local _origFireServer = nil
-local function HookRemotes()
-    if _origFireServer then return end  -- sudah di-hook
-
-    -- Pakai getrawmetatable kalau tersedia (Synapse, KRNL, dll)
-    local mt = nil
-    pcall(function() mt = getrawmetatable(game) end)
-    if not mt then return end
-
-    local oldIndex = nil
-    pcall(function() oldIndex = mt.__index end)
-    if not oldIndex then return end
-
-    -- Hook __namecall (cara paling reliable untuk tangkap :FireServer)
-    local oldNamecall = nil
-    pcall(function() oldNamecall = mt.__namecall end)
-    if not oldNamecall then return end
-
-    local hookOk = pcall(function()
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            -- Tangkap FireServer calls
-            if method == "FireServer" and self:IsA("RemoteEvent") then
-                local args = {...}
-                -- Log semua remote yang terpanggil
-                local entry = {
-                    name = self.Name,
-                    path = self:GetFullName(),
-                    args = args,
-                    time = tick(),
-                }
-                table.insert(SpyData.log, entry)
-
-                -- Deteksi apakah ini remote BABFT place block
-                -- Heuristik: arg pertama atau kedua adalah string nama block dari DB
-                if not SpyData.ready then
-                    for argIdx, arg in ipairs(args) do
-                        if type(arg) == "string" then
-                            local bd = DBlo[arg:lower()]
-                            if bd then
-                                -- INI DIA! Remote BABFT buat place block
-                                SpyData.remote      = self
-                                SpyData.args        = args
-                                SpyData.blockArgIdx = argIdx
-                                SpyData.ready       = true
-                                print("[OxyX Spy] ✅ Remote captured: "..self:GetFullName())
-                                print("[OxyX Spy] Block arg index: "..argIdx..", block: "..bd.n)
-                                -- Print semua args untuk debug
-                                for i,a in ipairs(args) do
-                                    print("  arg["..i.."] = "..type(a).." = "..tostring(a))
-                                end
-                                break
-                            end
-                        end
-                    end
-                end
-            end
-            return oldNamecall(self, ...)
-        end)
-        setreadonly(mt, true)
-    end)
-
-    if hookOk then
-        print("[OxyX Spy] 🔍 Remote hook aktif — place 1 block manual dulu untuk capture!")
-        Notify("OxyX Spy","Remote hook aktif!
-Place 1 block manual dulu untuk capture format.",5)
-    else
-        print("[OxyX Spy] ⚠ Hook gagal (mungkin executor tidak support) — pakai fallback")
-    end
-end
-
--- Coba hook saat script load
-task.spawn(function()
-    task.wait(1)  -- tunggu game load
-    HookRemotes()
-end)
-
--- FireServer dengan format yang sudah dicapture
-local function PlaceViaRemote(blockName)
-    if not SpyData.ready or not SpyData.remote or not SpyData.remote.Parent then
-        return false, "remote_not_captured"
-    end
-
-    local bd = FindBlock(blockName)
-    -- Buat args baru berdasarkan template, ganti nama block
-    local newArgs = {}
-    for i, arg in ipairs(SpyData.args) do
-        if i == SpyData.blockArgIdx then
-            -- Ganti dengan nama block yang diinginkan
-            newArgs[i] = bd.n
-        else
-            -- Pertahankan arg lain (color, position, dll) dari template
-            newArgs[i] = arg
+-- Dapatkan TrowelTool RF
+local function GetTrowelRF()
+    local rf = RS:FindFirstChild("BuildingParts", true)
+    if rf then
+        local tt = rf.Parent:FindFirstChild("TrowelTool") or
+                   RS:FindFirstChild("TrowelTool", true)
+        if tt then
+            return tt:FindFirstChild("OperationRF") or
+                   tt:FindFirstChildOfClass("RemoteFunction")
         end
     end
-
-    local ok = pcall(function()
-        SpyData.remote:FireServer(table.unpack(newArgs))
-    end)
-    return ok, ok and "ok" or "fireserver_failed"
+    -- Direct path
+    return RS:FindFirstChild("TrowelTool", true) and
+           RS:FindFirstChild("TrowelTool", true):FindFirstChildOfClass("RemoteFunction")
 end
 
--- Fallback: klik tombol GUI BABFT
-local function ClickGUIBlock(blockName)
-    -- Cari di inventory cache
+-- Klik tombol block di BuildGui untuk SELECT block
+local function SelectBlock(blockName)
+    local bg = GetBuildGui()
+    if not bg then return false end
+
+    -- Cari tombol dengan nama yang match
+    local btnName = ToButtonName(blockName)  -- "Wood Block" → "WoodBlock"
+
+    -- Cari di cache INV dulu
     local entry = INV[blockName]
     if entry and entry.btn and entry.btn.Parent then
-        local ok = pcall(function() entry.btn.MouseButton1Click:Fire() end)
-        if ok then return true end
+        pcall(function() entry.btn.MouseButton1Click:Fire() end)
+        return true
     end
-    -- Scan ulang semua GUI
-    for _, gui in ipairs(PGui:GetChildren()) do
-        if gui:IsA("ScreenGui") and not gui.Name:match("OxyX") then
-            for _, obj in ipairs(gui:GetDescendants()) do
-                if obj:IsA("ImageButton") or obj:IsA("TextButton") then
-                    local exact = DBlo[(obj.Name or ""):lower()]
-                    if exact and exact.n == blockName then
-                        pcall(function() obj.MouseButton1Click:Fire() end)
-                        return true
-                    end
-                end
+
+    -- Scan BuildGui
+    for _, obj in ipairs(bg:GetDescendants()) do
+        if (obj:IsA("ImageButton") or obj:IsA("TextButton")) then
+            if obj.Name == btnName or obj.Name:lower() == btnName:lower() then
+                pcall(function() obj.MouseButton1Click:Fire() end)
+                -- Update cache
+                INV[blockName] = INV[blockName] or {block=FindBlock(blockName)}
+                INV[blockName].btn = obj
+                return true
             end
         end
     end
     return false
 end
 
--- Fallback brute-force: coba semua kemungkinan format FireServer yang umum di BABFT
-local _cachedRemote = nil
-local function BruteFireServer(blockName)
-    -- Cari remote kalau belum ada
-    if not _cachedRemote or not _cachedRemote.Parent then
-        local candidates = {}
-        for _, v in ipairs(RS:GetDescendants()) do
-            if v:IsA("RemoteEvent") then
-                table.insert(candidates, v)
-            end
-        end
-        -- Sort: prioritaskan yang namanya relevan
-        table.sort(candidates, function(a, b)
-            local sa = a.Name:lower():find("place") or a.Name:lower():find("block") and 1 or 0
-            local sb = b.Name:lower():find("place") or b.Name:lower():find("block") and 1 or 0
-            return (sa or 0) > (sb or 0)
-        end)
-        _cachedRemote = candidates[1]
+-- Klik tombol "Place" di TabletToolGui (ini yang trigger place di BABFT)
+local function ClickPlaceButton()
+    local ttg = PGui:FindFirstChild("TabletToolGui")
+    if not ttg then return false end
+    local placeBtn = ttg:FindFirstChild("Place")
+    if placeBtn then
+        pcall(function() placeBtn.MouseButton1Click:Fire() end)
+        return true
     end
+    -- Cari tombol Place di semua children
+    for _, obj in ipairs(ttg:GetDescendants()) do
+        if (obj:IsA("TextButton") or obj:IsA("ImageButton"))
+            and obj.Name:lower() == "place" then
+            pcall(function() obj.MouseButton1Click:Fire() end)
+            return true
+        end
+    end
+    return false
+end
 
-    if not _cachedRemote then return false end
+-- Coba OperationRF (TrowelTool)
+local function TryTrowelRF(blockName, cf)
+    -- Path: ReplicatedStorage.BuildingParts.TrowelTool.OperationRF
+    local rf = RS:FindFirstChild("BuildingParts") and
+               RS.BuildingParts:FindFirstChild("TrowelTool") and
+               RS.BuildingParts.TrowelTool:FindFirstChild("OperationRF")
+    if not rf then return false end
 
-    local bd = FindBlock(blockName)
-    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-    local pos = hrp and hrp.CFrame or CFrame.new(0,5,0)
-
-    -- Coba semua format umum yang dipakai game berbasis Roblox
+    local ok = false
+    -- Berbagai format yang TrowelTool mungkin terima
     local formats = {
-        -- Format 1: nama saja
-        function() _cachedRemote:FireServer(bd.n) end,
-        -- Format 2: tabel dengan Name
-        function() _cachedRemote:FireServer({Name=bd.n}) end,
-        -- Format 3: ID angka
-        function() _cachedRemote:FireServer(bd.id) end,
-        -- Format 4: action string + nama
-        function() _cachedRemote:FireServer("Place", bd.n) end,
-        -- Format 5: nama + CFrame
-        function() _cachedRemote:FireServer(bd.n, pos) end,
-        -- Format 6: tabel lengkap
-        function() _cachedRemote:FireServer({
-            Name=bd.n, BlockName=bd.n, Id=bd.id,
-            CFrame=pos, Color=BrickColor.new("Medium stone grey")
-        }) end,
-        -- Format 7: string "PlaceBlock" + nama (BABFT style)
-        function() _cachedRemote:FireServer("PlaceBlock", bd.n) end,
+        function() rf:InvokeServer("Place", blockName, cf) end,
+        function() rf:InvokeServer("place", blockName, cf) end,
+        function() rf:InvokeServer(blockName, cf) end,
+        function() rf:InvokeServer({op="Place", name=blockName, cframe=cf}) end,
+        function() rf:InvokeServer("Place", {Name=blockName, CFrame=cf}) end,
     }
-
     for _, fmt in ipairs(formats) do
-        local ok = pcall(fmt)
-        if ok then return true end
+        pcall(fmt)
     end
-    return false
+    return true
 end
 
--- Master function: coba semua cara secara urutan
-local function ClickBABFTBlock(blockName)
-    -- Cara 1 (terbaik): gunakan format yang sudah dicapture spy
-    if SpyData.ready then
-        local ok, _ = PlaceViaRemote(blockName)
-        if ok then return true end
-    end
+-- MAIN PLACE FUNCTION
+local function DoPlace(blockName, posIndex)
+    posIndex = posIndex or 0
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    local cf = hrp
+        and (hrp.CFrame * CFrame.new(
+            ((posIndex % 8) - 3.5) * 4,
+            0,
+            -5 - math.floor(posIndex / 8) * 4
+        ))
+        or CFrame.new(posIndex * 4, 5, 0)
 
-    -- Cara 2: klik tombol GUI BABFT langsung
-    if ClickGUIBlock(blockName) then return true end
+    -- Step 1: Select block di BuildGui
+    local selected = SelectBlock(blockName)
 
-    -- Cara 3: brute-force semua format FireServer
-    if BruteFireServer(blockName) then return true end
+    -- Step 2: Klik tombol Place di TabletToolGui
+    local placed = ClickPlaceButton()
 
-    return false
+    -- Step 3: Coba TrowelTool RF
+    TryTrowelRF(blockName, cf)
+
+    return selected or placed
 end
 
--- ═══ PLACER ═════════════════════════════════════
-local Placer={delay=0.15,running=false,placed=0,failed=0}
+-- ═══ PLACER ══════════════════════════════════
+local Placer = { delay=0.3, running=false, placed=0, failed=0 }
 
-function Placer:PlaceOne(blockDef)
-    local name=blockDef.n
-    -- Kalau tidak punya block ini, cari pengganti dari inventory
+function Placer:PlaceOne(blockDef, idx)
+    local name = blockDef.n
     if not INV[name] then
-        -- Cari sekategori
-        for k,_ in pairs(INV) do
-            if FindBlock(k).cat==blockDef.cat then name=k; break end
+        for k in pairs(INV) do
+            if FindBlock(k).cat == blockDef.cat then name = k; break end
         end
-        -- Masih tidak ada → pakai block pertama yg ada
         if not INV[name] then
-            for k,_ in pairs(INV) do name=k; break end
+            for k in pairs(INV) do name = k; break end
         end
     end
-    local ok=ClickBABFTBlock(name)
-    if ok then self.placed=self.placed+1 else self.failed=self.failed+1 end
-    return ok,name
+    local ok = DoPlace(name, idx or 0)
+    if ok then self.placed = self.placed + 1
+    else self.failed = self.failed + 1 end
+    return ok, name
 end
 
-function Placer:Build(data,cb)
-    if self.running then Notify("Build","Sudah berjalan!",2); return end
+function Placer:Build(data, cb)
+    if self.running then Notify("Build","Sudah running!",2); return end
     if not data or not data.blocks then return end
-    self.running=true; self.placed=0; self.failed=0
-    local total=#data.blocks
+    self.running = true; self.placed = 0; self.failed = 0
+    local total = #data.blocks
     task.spawn(function()
-        Notify("Build","Memulai "..total.." blocks 🚀",2)
-        for i,bi in ipairs(data.blocks) do
+        Notify("Build","Mulai "..total.." blocks",2)
+        for i, bi in ipairs(data.blocks) do
             if not self.running then break end
-            local bd=FindBlock(bi.name or bi.n or "")
-            local ok2,used=self:PlaceOne(bd)
-            if cb then pcall(cb,i,total,used,ok2) end
+            local bd = FindBlock(bi.name or bi.n or "")
+            local ok2, used = self:PlaceOne(bd, i-1)
+            if cb then pcall(cb, i, total, used, ok2) end
             task.wait(self.delay)
         end
-        self.running=false
-        if cb then pcall(cb,total,total,"DONE",true) end
+        self.running = false
+        if cb then pcall(cb, total, total, "DONE", true) end
     end)
 end
 
 function Placer:Stop()
-    self.running=false
+    self.running = false
     Notify("Stop","Build dihentikan",2)
 end
 
--- ═══ FILE SYSTEM ════════════════════════════════
-local function MkDir(f) if makefolder then pcall(function() if not isfolder(f) then makefolder(f) end end) end end
-local function LsExt(folder,ext)
-    local res={}
+-- ═══ FILE SYSTEM ════════════════════════════
+local function MkDir(f)
+    if makefolder then pcall(function()
+        if not isfolder(f) then makefolder(f) end
+    end) end
+end
+local function LsExt(folder, ext)
+    local res = {}
     if not listfiles then return res end
-    for _,path in ipairs({folder,folder.."/",""}) do
+    for _, path in ipairs({folder, folder.."/", ""}) do
         pcall(function()
-            for _,p in ipairs(listfiles(path)) do
-                local fn=p:match("([^/\\]+)$") or p
-                if fn:lower():sub(-#ext)==ext:lower() then res[#res+1]={name=fn,path=p} end
+            for _, p in ipairs(listfiles(path)) do
+                local fn = p:match("([^/\\]+)$") or p
+                if fn:lower():sub(-#ext) == ext:lower() then
+                    res[#res+1] = {name=fn, path=p}
+                end
             end
         end)
     end
-    local seen,out={},{}
-    for _,f in ipairs(res) do if not seen[f.name] then seen[f.name]=true; out[#out+1]=f end end
+    local seen, out = {}, {}
+    for _, f in ipairs(res) do
+        if not seen[f.name] then seen[f.name]=true; out[#out+1]=f end
+    end
     return out
 end
 local function RdF(path)
-    if readfile then local ok,t=pcall(readfile,path); if ok and t then return t end end
+    if readfile then
+        local ok, t = pcall(readfile, path)
+        if ok and t then return t end
+    end
 end
-local function WrF(path,content)
-    if writefile then pcall(writefile,path,content); return true end
+local function WrF(path, content)
+    if writefile then pcall(writefile, path, content); return true end
     return false
 end
 local function ParseBuild(txt)
-    if txt=="" then return nil,"Kosong" end
-    local ok,d=pcall(function() return Http:JSONDecode(txt) end)
-    if not ok or type(d)~="table" then return nil,"Bukan JSON valid" end
-    if not d.blocks or #d.blocks==0 then return nil,"Tidak ada blocks" end
+    if txt == "" then return nil, "Kosong" end
+    local ok, d = pcall(function() return Http:JSONDecode(txt) end)
+    if not ok or type(d) ~= "table" then return nil, "Bukan JSON valid" end
+    if not d.blocks or #d.blocks == 0 then return nil, "Tidak ada blocks" end
     return d
 end
 local function ParseJSON(txt)
-    if txt=="" then return nil,"Kosong" end
-    local ok,raw=pcall(function() return Http:JSONDecode(txt) end)
-    if not ok or type(raw)~="table" then return nil,"Bukan JSON valid" end
-    if raw.blocks and #raw.blocks>0 then return raw end
-    local blocks={}
-    local function scan(o,d)
-        if type(o)~="table" or d>10 then return end
-        local cls=o.ClassName or ""
-        if cls=="Part" or cls=="MeshPart" or cls=="WedgePart" or cls=="UnionOperation" then
-            local bd=FindBlock(o.Name or "")
-            blocks[#blocks+1]={id=bd.id,name=bd.n,
-                position={x=(o.CFrame and o.CFrame[1]) or 0,y=(o.CFrame and o.CFrame[2]) or 5,z=(o.CFrame and o.CFrame[3]) or 0},
-                size={x=(o.Size and o.Size[1]) or 4,y=(o.Size and o.Size[2]) or 1.2,z=(o.Size and o.Size[3]) or 2},
-                color={r=(o.Color and math.floor(o.Color[1]*255)) or 163,g=(o.Color and math.floor(o.Color[2]*255)) or 102,b=(o.Color and math.floor(o.Color[3]*255)) or 51}}
+    if txt == "" then return nil, "Kosong" end
+    local ok, raw = pcall(function() return Http:JSONDecode(txt) end)
+    if not ok or type(raw) ~= "table" then return nil, "Bukan JSON valid" end
+    if raw.blocks and #raw.blocks > 0 then return raw end
+    local blocks = {}
+    local function scan(o, d)
+        if type(o) ~= "table" or d > 10 then return end
+        local cls = o.ClassName or ""
+        if cls=="Part" or cls=="MeshPart" or cls=="WedgePart" then
+            local bd = FindBlock(o.Name or "")
+            blocks[#blocks+1] = {id=bd.id, name=bd.n,
+                position={x=(o.CFrame and o.CFrame[1]) or 0, y=5, z=(o.CFrame and o.CFrame[3]) or 0}}
         end
-        if o.Children then for _,c in ipairs(o.Children) do scan(c,d+1) end end
-        for k,v in pairs(o) do if type(v)=="table" and k~="Children" then scan(v,d+1) end end
+        if o.Children then for _, c in ipairs(o.Children) do scan(c, d+1) end end
+        for k, v in pairs(o) do
+            if type(v) == "table" and k ~= "Children" then scan(v, d+1) end
+        end
     end
-    scan(raw,0)
-    if #blocks==0 then blocks={{id=158,name="Wood Block",position={x=0,y=5,z=0},size={x=4,y=1.2,z=2},color={r=163,g=102,b=51}}} end
-    return {version="1.0",name="JSON_Import",author=LP.Name,blocks=blocks,welds={}}
+    scan(raw, 0)
+    if #blocks == 0 then
+        blocks = {{id=158, name="Wood Block", position={x=0,y=5,z=0}}}
+    end
+    return {version="1.0", name="JSON_Import", author=LP.Name, blocks=blocks, welds={}}
 end
-local function Ser(name,blocks)
-    local d={version="1.0",name=name or "MyBuild",author=LP.Name,blocks=blocks or {},welds={}}
-    local ok,j=pcall(function() return Http:JSONEncode(d) end)
+local function Ser(name, blocks)
+    local d = {version="1.0", name=name or "Build", author=LP.Name,
+        blocks=blocks or {}, welds={}}
+    local ok, j = pcall(function() return Http:JSONEncode(d) end)
     return ok and j
 end
 
--- Shape builder
-local SB={}
-function SB.Ball(n,r)       local b={} for x=-r,r do for y=-r,r do for z=-r,r do if x*x+y*y+z*z<=r*r then b[#b+1]={name=n,position={x=x*2,y=y*2,z=z*2}} end end end end return b end
-function SB.Cylinder(n,r,h) local b={} for y=0,h-1 do for x=-r,r do for z=-r,r do if x*x+z*z<=r*r then b[#b+1]={name=n,position={x=x*2,y=y*2,z=z*2}} end end end end return b end
-function SB.Triangle(n,ba,h) local b={} for y=0,h-1 do local lw=math.max(1,math.floor(ba*(1-y/h))) for x=0,lw-1 do b[#b+1]={name=n,position={x=(x+(ba-lw)/2)*2,y=y*2,z=0}} end end return b end
-function SB.Pyramid(n,ba)   local b={} for y=0,ba-1 do for x=0,ba-1-y do for z=0,ba-1-y do b[#b+1]={name=n,position={x=(x+y)*2,y=y*2,z=(z+y)*2}} end end end return b end
-function SB.Platform(n,w,l) local b={} for x=0,w-1 do for z=0,l-1 do b[#b+1]={name=n,position={x=x*4,y=0,z=z*2},size={x=4,y=1.2,z=2}} end end return b end
-function SB.HollowBox(n,w,h,d) local b={} for x=0,w-1 do for y=0,h-1 do for z=0,d-1 do if x==0 or x==w-1 or y==0 or y==h-1 or z==0 or z==d-1 then b[#b+1]={name=n,position={x=x*2,y=y*2,z=z*2}} end end end end return b end
-function SB.BoatHull(n,len,w) local b={} for x=0,len-1 do for z=0,w-1 do b[#b+1]={name=n,position={x=x*4,y=0,z=z*2}} end end for x=0,len-1 do for y=1,2 do b[#b+1]={name=n,position={x=x*4,y=y*1.2,z=0}} b[#b+1]={name=n,position={x=x*4,y=y*1.2,z=(w-1)*2}} end end return b end
+-- Shapes
+local SB = {}
+function SB.Ball(n,r)     local b={} for x=-r,r do for y=-r,r do for z=-r,r do if x*x+y*y+z*z<=r*r then b[#b+1]={name=n,position={x=x*2,y=y*2,z=z*2}} end end end end return b end
+function SB.Cyl(n,r,h)   local b={} for y=0,h-1 do for x=-r,r do for z=-r,r do if x*x+z*z<=r*r then b[#b+1]={name=n,position={x=x*2,y=y*2,z=z*2}} end end end end return b end
+function SB.Flat(n,w,l)  local b={} for x=0,w-1 do for z=0,l-1 do b[#b+1]={name=n,position={x=x*4,y=0,z=z*2}} end end return b end
+function SB.Hull(n,len,w) local b={} for x=0,len-1 do for z=0,w-1 do b[#b+1]={name=n,position={x=x*4,y=0,z=z*2}} end end for x=0,len-1 do for y=1,2 do b[#b+1]={name=n,position={x=x*4,y=y*1.2,z=0}} b[#b+1]={name=n,position={x=x*4,y=y*1.2,z=(w-1)*2}} end end return b end
 function SB.Run(shape,n,p)
     local bl={}
     if shape=="Ball" then bl=SB.Ball(n,p.r or 3)
-    elseif shape=="Cylinder" then bl=SB.Cylinder(n,p.r or 3,p.h or 5)
-    elseif shape=="Triangle" then bl=SB.Triangle(n,p.base or 5,p.h or 5)
-    elseif shape=="Pyramid" then bl=SB.Pyramid(n,p.base or 5)
-    elseif shape=="Platform" then bl=SB.Platform(n,p.w or 5,p.l or 5)
-    elseif shape=="HollowBox" then bl=SB.HollowBox(n,p.w or 5,p.h or 3,p.d or 5)
-    elseif shape=="BoatHull" then bl=SB.BoatHull(n,p.l or 8,p.w or 4) end
+    elseif shape=="Cylinder" then bl=SB.Cyl(n,p.r or 3,p.h or 5)
+    elseif shape=="Platform" then bl=SB.Flat(n,p.w or 5,p.l or 5)
+    elseif shape=="BoatHull" then bl=SB.Hull(n,p.l or 8,p.w or 4) end
     if #bl>0 then return {version="1.0",name="OxyX_"..shape,author=LP.Name,blocks=bl,welds={}} end
 end
 
--- ═══ STATE ══════════════════════════════════════
-local St={minimized=false,tab="Build",buildData=nil,sp={r=3,h=5,w=5,l=8,base=5,d=5}}
+-- ═══ STATE ═══════════════════════════════════
+local St = {minimized=false, tab="Build", buildData=nil,
+    sp={r=3,h=5,w=5,l=8}}
 
--- ════════════════════════════════════════════════
---   BUILD UI
--- ════════════════════════════════════════════════
+-- ═══════════════════════════════════════════════
+-- UI
+-- ═══════════════════════════════════════════════
 local function BuildUI()
     pcall(function()
-        local old=GP:FindFirstChild("OxyX_v7")
+        local old = GP:FindFirstChild("OxyX_v10")
         if old then old:Destroy() end
     end)
     MkDir("builds"); MkDir("json")
-    local invCnt=ScanInventory()
+    local invCnt = ScanInventory()
 
-    local SG=New("ScreenGui",{Name="OxyX_v7",ResetOnSpawn=false,IgnoreGuiInset=true,
-        DisplayOrder=9999,ZIndexBehavior=Enum.ZIndexBehavior.Sibling,Parent=GP})
+    local SG = New("ScreenGui",{Name="OxyX_v10",ResetOnSpawn=false,
+        IgnoreGuiInset=true,DisplayOrder=9999,
+        ZIndexBehavior=Enum.ZIndexBehavior.Sibling,Parent=GP})
     if not SG then Notify("Error","Gagal buat GUI",5); return end
 
-    -- ─── WINDOW  500 × 610 ──────────────────────
-    -- SENGAJA 500px lebar supaya 6 tab muat dengan nyaman
-    local MF=New("Frame",{
-        Size=UDim2.new(0,500,0,610),
-        Position=UDim2.new(0.5,-250,0.5,-305),
+    -- Window 500×620
+    local MF = New("Frame",{Size=UDim2.new(0,500,0,620),
+        Position=UDim2.new(0.5,-250,0.5,-310),
         BackgroundColor3=C.BG0,BorderSizePixel=0,
         ClipsDescendants=false,Parent=SG})
     New("UICorner",{CornerRadius=UDim.new(0,16),Parent=MF})
 
-    -- Animated glow border
-    local BordF=New("Frame",{Size=UDim2.new(1,8,1,8),Position=UDim2.new(0,-4,0,-4),
-        BackgroundColor3=C.PRP,BorderSizePixel=0,ZIndex=0,Parent=MF})
+    -- Animated border
+    local BordF = New("Frame",{Size=UDim2.new(1,8,1,8),
+        Position=UDim2.new(0,-4,0,-4),BackgroundColor3=C.PRP,
+        BorderSizePixel=0,ZIndex=0,Parent=MF})
     New("UICorner",{CornerRadius=UDim.new(0,20),Parent=BordF})
-    local BG=New("UIGradient",{Color=ColorSequence.new({
-        ColorSequenceKeypoint.new(0,C.PRP),ColorSequenceKeypoint.new(0.25,C.CYN),
-        ColorSequenceKeypoint.new(0.5,C.PNK),ColorSequenceKeypoint.new(0.75,C.GLD),
+    local BG = New("UIGradient",{Color=ColorSequence.new({
+        ColorSequenceKeypoint.new(0,C.PRP),
+        ColorSequenceKeypoint.new(0.25,C.CYN),
+        ColorSequenceKeypoint.new(0.5,C.PNK),
+        ColorSequenceKeypoint.new(0.75,C.GLD),
         ColorSequenceKeypoint.new(1,C.PRP),
     }),Rotation=0,Parent=BordF})
 
     -- Inner BG
-    local Inn=New("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=C.BG0,
+    local Inn = New("Frame",{Size=UDim2.new(1,0,1,0),BackgroundColor3=C.BG0,
         BorderSizePixel=0,ZIndex=1,Parent=MF})
     New("UICorner",{CornerRadius=UDim.new(0,16),Parent=Inn})
     New("UIGradient",{Color=ColorSequence.new({
@@ -650,10 +593,9 @@ local function BuildUI()
     }),Rotation=145,Parent=Inn})
 
     -- Stars
-    for i=1,30 do
-        local sz=math.random(1,3)
-        local s=New("Frame",{
-            Size=UDim2.new(0,sz,0,sz),
+    for i = 1, 28 do
+        local sz = math.random(1,3)
+        local s = New("Frame",{Size=UDim2.new(0,sz,0,sz),
             Position=UDim2.new(math.random()*.94,0,math.random()*.94,0),
             BackgroundColor3=i%3==0 and C.CYN or i%2==0 and C.LPRP or C.WHT,
             BackgroundTransparency=math.random()*.5+.15,BorderSizePixel=0,ZIndex=2,Parent=Inn})
@@ -662,220 +604,155 @@ local function BuildUI()
             while s and s.Parent do
                 task.wait(.9+math.random()*2.5)
                 pcall(function()
-                    Tw(s,{BackgroundTransparency=.92},.4)
+                    Tw(s,{BackgroundTransparency=.93},.4)
                     task.wait(.45)
                     Tw(s,{BackgroundTransparency=math.random()*.45},.4)
                 end)
             end
         end)
     end
-    -- Nebula
-    for _,nb in ipairs({
-        {Color3.fromRGB(40,0,78),.87,UDim2.new(.04,0,.08,0),150,90},
-        {Color3.fromRGB(0,30,72),.89,UDim2.new(.5,0,.52,0),120,95},
-        {Color3.fromRGB(68,0,58),.88,UDim2.new(.7,0,.06,0),105,75},
-    }) do
-        local nf=New("Frame",{Size=UDim2.new(0,nb[4],0,nb[5]),Position=nb[3],
-            BackgroundColor3=nb[1],BackgroundTransparency=nb[2],BorderSizePixel=0,ZIndex=2,Parent=Inn})
-        New("UICorner",{CornerRadius=UDim.new(.5,0),Parent=nf})
-    end
 
-    -- Rotating border
-    local ba=0
-    local bconn=RunService.Heartbeat:Connect(function(dt)
-        ba=(ba+dt*40)%360
-        pcall(function() BG.Rotation=ba end)
+    -- Border rotate
+    local ba = 0
+    local bconn = RunService.Heartbeat:Connect(function(dt)
+        ba = (ba + dt*40) % 360
+        pcall(function() BG.Rotation = ba end)
     end)
 
-    -- ─── HEADER 88px ────────────────────────────
-    local HDR=New("Frame",{Size=UDim2.new(1,0,0,88),
+    -- ── HEADER 88px ──────────────────────────
+    local HDR = New("Frame",{Size=UDim2.new(1,0,0,88),
         BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=Inn})
     New("UICorner",{CornerRadius=UDim.new(0,16),Parent=HDR})
     New("UIGradient",{Color=ColorSequence.new({
         ColorSequenceKeypoint.new(0,Color3.fromRGB(30,12,78)),
         ColorSequenceKeypoint.new(1,Color3.fromRGB(10,5,32)),
     }),Rotation=90,Parent=HDR})
-    -- Patch bottom corners
     New("Frame",{Size=UDim2.new(1,0,0,20),Position=UDim2.new(0,0,1,-20),
         BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=HDR})
 
-    -- ─── ASTOLFO ANIMATED ───────────────────────
-    -- Roblox tidak support GIF asli.
-    -- Simulasi: 4 ImageLabel di-overlap, fade bergantian = pseudo-GIF animation
-    local AF=New("Frame",{Size=UDim2.new(0,70,0,70),Position=UDim2.new(0,12,0,9),
-        BackgroundColor3=C.BG0,BorderSizePixel=0,ZIndex=15,Parent=HDR})
+    -- ── ASTOLFO ─────────────────────────────
+    local AF = New("Frame",{Size=UDim2.new(0,70,0,70),
+        Position=UDim2.new(0,12,0,9),BackgroundColor3=C.BG0,
+        BorderSizePixel=0,ZIndex=15,Parent=HDR})
     New("UICorner",{CornerRadius=UDim.new(0,14),Parent=AF})
-    New("UIStroke",{Color=C.PNK,Thickness=2.5,Parent=AF})
-
-    -- Glow ring
-    local GR=New("Frame",{Size=UDim2.new(1,12,1,12),Position=UDim2.new(0,-6,0,-6),
-        BackgroundTransparency=1,BorderSizePixel=0,ZIndex=14,Parent=AF})
-    New("UICorner",{CornerRadius=UDim.new(0,20),Parent=GR})
-    local GS=New("UIStroke",{Color=C.PNK,Thickness=3.5,Transparency=.1,Parent=GR})
-
-    -- ASTOLFO ANIMATED:
-    -- Roblox ImageLabel TIDAK support GIF.
-    -- Workaround terbaik: pakai ImageLabel tunggal + animasikan ImageColor3 & Position
-    -- untuk efek "hidup", plus shimmer sweep yang konsisten
-    -- Asset IDs Astolfo yang valid di Roblox:
-    local ASTOLFO_IMGS = {
-        "rbxassetid://7078026274",   -- astolfo pink
-        "rbxassetid://6423102987",   -- anime character pink
-        "rbxassetid://7078026274",
-        "rbxassetid://11832808662",  -- astolfo alt
-    }
-    -- Satu ImageLabel utama (visible)
-    local AImgMain=New("ImageLabel",{
-        Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-        Image=ASTOLFO_IMGS[1],ScaleType=Enum.ScaleType.Crop,
-        ZIndex=16,Parent=AF})
-    New("UICorner",{CornerRadius=UDim.new(0,12),Parent=AImgMain})
-
-    -- Overlay untuk crossfade (layer ke-2)
-    local AImgOver=New("ImageLabel",{
-        Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
-        Image=ASTOLFO_IMGS[2],ImageTransparency=1,
-        ScaleType=Enum.ScaleType.Crop,ZIndex=17,Parent=AF})
-    New("UICorner",{CornerRadius=UDim.new(0,12),Parent=AImgOver})
-
-    -- Shimmer sweep (efek glitter)
-    local Shim=New("Frame",{
-        Size=UDim2.new(0.3,0,1.3,0),Position=UDim2.new(-0.3,0,-0.15,0),
-        BackgroundColor3=C.WHT,BackgroundTransparency=0.75,
-        BorderSizePixel=0,ZIndex=19,Parent=AF})
+    local GS = New("UIStroke",{Color=C.PNK,Thickness=3,Transparency=.1,Parent=AF})
+    -- Layer 1 (main)
+    local AI1 = New("ImageLabel",{Size=UDim2.new(1,0,1,0),
+        BackgroundTransparency=1,Image="rbxassetid://7078026274",
+        ScaleType=Enum.ScaleType.Crop,ImageTransparency=0,ZIndex=16,Parent=AF})
+    New("UICorner",{CornerRadius=UDim.new(0,12),Parent=AI1})
+    -- Layer 2 (crossfade)
+    local AI2 = New("ImageLabel",{Size=UDim2.new(1,0,1,0),
+        BackgroundTransparency=1,Image="rbxassetid://11832808662",
+        ScaleType=Enum.ScaleType.Crop,ImageTransparency=1,ZIndex=17,Parent=AF})
+    New("UICorner",{CornerRadius=UDim.new(0,12),Parent=AI2})
+    -- Shimmer
+    local Shim = New("Frame",{Size=UDim2.new(0.3,0,1.3,0),
+        Position=UDim2.new(-0.3,0,-0.15,0),BackgroundColor3=C.WHT,
+        BackgroundTransparency=0.75,BorderSizePixel=0,ZIndex=19,Parent=AF})
     New("UICorner",{CornerRadius=UDim.new(0,4),Parent=Shim})
-    -- Rotate shimmer sedikit supaya diagonal
-    New("UIGradient",{Color=ColorSequence.new({
-        ColorSequenceKeypoint.new(0,Color3.new(1,1,1)),
-        ColorSequenceKeypoint.new(0.5,Color3.fromRGB(255,220,255)),
-        ColorSequenceKeypoint.new(1,Color3.new(1,1,1)),
-    }),Transparency=NumberSequence.new({
+    New("UIGradient",{Transparency=NumberSequence.new({
         NumberSequenceKeypoint.new(0,1),
-        NumberSequenceKeypoint.new(0.4,0.55),
-        NumberSequenceKeypoint.new(0.6,0.55),
+        NumberSequenceKeypoint.new(0.5,0.5),
         NumberSequenceKeypoint.new(1,1),
     }),Rotation=15,Parent=Shim})
-
-    -- Colour tint pulse (bikin "hidup")
-    local TINTS={
-        Color3.fromRGB(255,230,245),  -- pink warm
-        Color3.fromRGB(220,235,255),  -- blue cool
-        Color3.fromRGB(255,245,220),  -- golden
-        Color3.fromRGB(230,255,240),  -- green tint
-    }
-
-    -- Animasi: crossfade antar asset + shimmer loop + tint pulse
-    local imgIdx=1
+    -- Crossfade animation
+    local imgs = {"rbxassetid://7078026274","rbxassetid://11832808662",
+        "rbxassetid://7078026274","rbxassetid://6423102987"}
+    local ci = 1
     task.spawn(function()
-        while AImgMain and AImgMain.Parent do
-            local nextIdx=(imgIdx%#ASTOLFO_IMGS)+1
-            -- Tween overlay masuk
+        while AI1 and AI1.Parent do
+            ci = ci % #imgs + 1
             pcall(function()
-                AImgOver.Image=ASTOLFO_IMGS[nextIdx]
-                AImgOver.ImageTransparency=1
-                -- crossfade: overlay fade in, main fade out
-                Tw(AImgOver,{ImageTransparency=0},0.4,Enum.EasingStyle.Sine)
-                Tw(AImgMain,{ImageTransparency=1},0.4,Enum.EasingStyle.Sine)
+                AI2.Image = imgs[ci]; AI2.ImageTransparency = 1
+                Tw(AI2,{ImageTransparency=0},.5,Enum.EasingStyle.Sine)
+                Tw(AI1,{ImageTransparency=1},.5,Enum.EasingStyle.Sine)
             end)
-            task.wait(0.45)
-            -- Swap: sekarang overlay jadi main
+            task.wait(0.6)
             pcall(function()
-                AImgMain.Image=ASTOLFO_IMGS[nextIdx]
-                AImgMain.ImageTransparency=0
-                AImgOver.ImageTransparency=1
+                AI1.Image = imgs[ci]; AI1.ImageTransparency = 0
+                AI2.ImageTransparency = 1
             end)
-            imgIdx=nextIdx
-
-            -- Tint pulse
-            Tw(AImgMain,{ImageColor3=TINTS[imgIdx]},0.3,Enum.EasingStyle.Sine)
-            task.wait(0.3)
-            Tw(AImgMain,{ImageColor3=Color3.new(1,1,1)},0.3,Enum.EasingStyle.Sine)
-            task.wait(0.8)
+            task.wait(1.2)
         end
     end)
-
-    -- Shimmer sweep loop (independen)
     task.spawn(function()
         while Shim and Shim.Parent do
-            Tw(Shim,{Position=UDim2.new(1.1,0,-0.15,0)},0.7,Enum.EasingStyle.Sine)
+            Tw(Shim,{Position=UDim2.new(1.1,0,-0.15,0)},.7,Enum.EasingStyle.Sine)
             task.wait(0.75)
-            pcall(function() Shim.Position=UDim2.new(-0.3,0,-0.15,0) end)
-            task.wait(1.8+math.random()*1.2)
+            pcall(function() Shim.Position = UDim2.new(-0.3,0,-0.15,0) end)
+            task.wait(2+math.random()*1.5)
         end
-    end)
-
-    -- Glow ring colour cycle
-    local rba=0
-    local ringConn=RunService.Heartbeat:Connect(function(dt)
-        rba=(rba+dt*95)%360
-        -- manual hue shift on stroke
     end)
     task.spawn(function()
         local gc={C.PNK,C.CYN,C.LPRP,C.GLD,C.PRP}; local gi=1
         while GS and GS.Parent do
-            gi=gi%#gc+1
-            Tw(GS,{Color=gc[gi]},1,Enum.EasingStyle.Sine)
+            gi = gi%#gc+1; Tw(GS,{Color=gc[gi]},1,Enum.EasingStyle.Sine)
             task.wait(1.1)
         end
     end)
 
-    -- ─── TITLE ──────────────────────────────────
-    local TA=New("Frame",{Size=UDim2.new(0,260,0,70),Position=UDim2.new(0,92,0,9),
-        BackgroundTransparency=1,ZIndex=15,Parent=HDR})
-    local TL=New("TextLabel",{Size=UDim2.new(1,0,0,38),BackgroundTransparency=1,
-        Text="OxyX",TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextScaled=true,
-        ZIndex=15,Parent=TA})
+    -- Title
+    local TA = New("Frame",{Size=UDim2.new(0,295,0,70),
+        Position=UDim2.new(0,92,0,9),BackgroundTransparency=1,ZIndex=15,Parent=HDR})
+    local TL = New("TextLabel",{Size=UDim2.new(1,0,0,38),BackgroundTransparency=1,
+        Text="OxyX",TextColor3=C.WHT,Font=Enum.Font.GothamBold,
+        TextScaled=true,ZIndex=15,Parent=TA})
     New("UIGradient",{Color=ColorSequence.new({
         ColorSequenceKeypoint.new(0,C.LPRP),ColorSequenceKeypoint.new(.35,C.CYN),
         ColorSequenceKeypoint.new(.7,C.PNK),ColorSequenceKeypoint.new(1,C.GLD),
     }),Rotation=5,Parent=TL})
     New("TextLabel",{Size=UDim2.new(1,0,0,17),Position=UDim2.new(0,0,0,39),
-        BackgroundTransparency=1,Text="Build A Boat For Treasure  —  Galaxy Edition",
+        BackgroundTransparency=1,Text="Build A Boat For Treasure  —  Galaxy v10",
         TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextScaled=true,ZIndex=15,Parent=TA})
-    local BR=New("Frame",{Size=UDim2.new(1,0,0,16),Position=UDim2.new(0,0,0,57),
-        BackgroundTransparency=1,ZIndex=15,Parent=TA})
-    New("UIListLayout",{FillDirection=Enum.FillDirection.Horizontal,Padding=UDim.new(0,4),Parent=BR})
-    for _,info in ipairs({{"v5.0",C.DPRP},{"GALAXY",C.PRP},{"159 BLK",Color3.fromRGB(0,100,50)},{"INV:"..invCnt,Color3.fromRGB(0,80,120)}}) do
-        local b=New("TextLabel",{Size=UDim2.new(0,0,1,0),AutomaticSize=Enum.AutomaticSize.X,
-            BackgroundColor3=info[2],BorderSizePixel=0,Text=" "..info[1].." ",
-            TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=9,ZIndex=16,Parent=BR})
+    local BR = New("Frame",{Size=UDim2.new(1,0,0,16),
+        Position=UDim2.new(0,0,0,57),BackgroundTransparency=1,ZIndex=15,Parent=TA})
+    New("UIListLayout",{FillDirection=Enum.FillDirection.Horizontal,
+        Padding=UDim.new(0,4),Parent=BR})
+    for _, info in ipairs({
+        {"v9.0",C.DPRP},{"GALAXY",C.PRP},
+        {"159 BLK",Color3.fromRGB(0,100,50)},
+        {"INV:"..invCnt,Color3.fromRGB(0,80,120)},
+    }) do
+        local b = New("TextLabel",{Size=UDim2.new(0,0,1,0),
+            AutomaticSize=Enum.AutomaticSize.X,BackgroundColor3=info[2],
+            BorderSizePixel=0,Text=" "..info[1].." ",
+            TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=9,
+            ZIndex=16,Parent=BR})
         New("UICorner",{CornerRadius=UDim.new(0,4),Parent=b})
     end
 
-    -- Controls
-    local MinB=New("TextButton",{Size=UDim2.new(0,28,0,28),Position=UDim2.new(1,-66,0,12),
-        BackgroundColor3=C.BG3,BorderSizePixel=0,Text="−",TextColor3=C.YLW,
-        Font=Enum.Font.GothamBold,TextSize=20,AutoButtonColor=false,ZIndex=20,Parent=HDR})
+    -- Close / Min buttons
+    local MinB = New("TextButton",{Size=UDim2.new(0,28,0,28),
+        Position=UDim2.new(1,-66,0,12),BackgroundColor3=C.BG3,
+        BorderSizePixel=0,Text="−",TextColor3=C.YLW,
+        Font=Enum.Font.GothamBold,TextSize=20,AutoButtonColor=false,
+        ZIndex=20,Parent=HDR})
     New("UICorner",{CornerRadius=UDim.new(0,8),Parent=MinB})
     New("UIStroke",{Color=C.YLW,Thickness=1.5,Parent=MinB})
-    local ClsB=New("TextButton",{Size=UDim2.new(0,28,0,28),Position=UDim2.new(1,-34,0,12),
-        BackgroundColor3=C.BG3,BorderSizePixel=0,Text="✕",TextColor3=C.RED,
-        Font=Enum.Font.GothamBold,TextSize=13,AutoButtonColor=false,ZIndex=20,Parent=HDR})
+    local ClsB = New("TextButton",{Size=UDim2.new(0,28,0,28),
+        Position=UDim2.new(1,-34,0,12),BackgroundColor3=C.BG3,
+        BorderSizePixel=0,Text="✕",TextColor3=C.RED,
+        Font=Enum.Font.GothamBold,TextSize=13,AutoButtonColor=false,
+        ZIndex=20,Parent=HDR})
     New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ClsB})
     New("UIStroke",{Color=C.RED,Thickness=1.5,Parent=ClsB})
 
-    -- ─── TAB BAR ────────────────────────────────
-    -- Window: 500px
-    -- 6 tabs × 76px + 5 gaps × 4px + 2 × 6px padding = 456+20+12 = 488px  ✅ muat!
-    local TabBG=New("Frame",{Size=UDim2.new(1,0,0,38),Position=UDim2.new(0,0,0,88),
-        BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=Inn})
+    -- ── TAB BAR (absolute position, tidak pakai UIListLayout) ─
+    -- 500px - 12px padding = 488px
+    -- 6 tabs × 78px + 5 gaps × 4px = 488px  ✓
+    local TabBG = New("Frame",{Size=UDim2.new(1,0,0,38),
+        Position=UDim2.new(0,0,0,88),BackgroundColor3=C.BG1,
+        BorderSizePixel=0,ZIndex=10,Parent=Inn})
     New("UIGradient",{Color=ColorSequence.new({
         ColorSequenceKeypoint.new(0,Color3.fromRGB(20,10,55)),
         ColorSequenceKeypoint.new(1,Color3.fromRGB(9,5,28)),
     }),Rotation=90,Parent=TabBG})
-    -- Divider garis atas
     New("Frame",{Size=UDim2.new(1,-12,0,1),Position=UDim2.new(0,6,0,0),
         BackgroundColor3=C.BG3,BorderSizePixel=0,Parent=TabBG})
 
-    -- Tab row: NO UIListLayout, manual absolute positioning
-    -- Window = 500px, padding 6px each side = 488px usable
-    -- 6 tabs dengan gap 3px: (488 - 5*3) / 6 = 78px per tab
-    local TAB_W = 78
-    local TAB_GAP = 4
-    local TAB_START = 6
-
-    -- ─── CONTENT ────────────────────────────────
-    local ContentSF=New("ScrollingFrame",{
+    -- Content
+    local ContentSF = New("ScrollingFrame",{
         Size=UDim2.new(1,0,1,-162),Position=UDim2.new(0,0,0,126),
         BackgroundColor3=C.BG0,BorderSizePixel=0,
         ScrollBarThickness=4,ScrollBarImageColor3=C.PRP,
@@ -883,253 +760,331 @@ local function BuildUI()
         ZIndex=5,Parent=Inn})
 
     -- Progress bar
-    local PBG=New("Frame",{Size=UDim2.new(1,-20,0,8),Position=UDim2.new(0,10,0,130),
-        BackgroundColor3=C.BG3,BorderSizePixel=0,Visible=false,ZIndex=12,Parent=Inn})
+    local PBG = New("Frame",{Size=UDim2.new(1,-20,0,8),
+        Position=UDim2.new(0,10,0,130),BackgroundColor3=C.BG3,
+        BorderSizePixel=0,Visible=false,ZIndex=12,Parent=Inn})
     New("UICorner",{CornerRadius=UDim.new(1,0),Parent=PBG})
-    local PFill=New("Frame",{Size=UDim2.new(0,0,1,0),BackgroundColor3=C.GRN,BorderSizePixel=0,Parent=PBG})
+    local PFill = New("Frame",{Size=UDim2.new(0,0,1,0),
+        BackgroundColor3=C.GRN,BorderSizePixel=0,Parent=PBG})
     New("UICorner",{CornerRadius=UDim.new(1,0),Parent=PFill})
-    New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,C.CYN),ColorSequenceKeypoint.new(1,C.GRN)}),Parent=PFill})
-    local PLbl=New("TextLabel",{Size=UDim2.new(1,-20,0,12),Position=UDim2.new(0,10,0,140),
-        BackgroundTransparency=1,Text="",TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=10,
+    New("UIGradient",{Color=ColorSequence.new({
+        ColorSequenceKeypoint.new(0,C.CYN),ColorSequenceKeypoint.new(1,C.GRN),
+    }),Parent=PFill})
+    local PLbl = New("TextLabel",{Size=UDim2.new(1,-20,0,12),
+        Position=UDim2.new(0,10,0,140),BackgroundTransparency=1,Text="",
+        TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=10,
         TextXAlignment=Enum.TextXAlignment.Left,Visible=false,ZIndex=12,Parent=Inn})
 
     -- Status bar
-    local SBar=New("Frame",{Size=UDim2.new(1,0,0,34),Position=UDim2.new(0,0,1,-34),
-        BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=Inn})
+    local SBar = New("Frame",{Size=UDim2.new(1,0,0,34),
+        Position=UDim2.new(0,0,1,-34),BackgroundColor3=C.BG1,
+        BorderSizePixel=0,ZIndex=10,Parent=Inn})
     New("UICorner",{CornerRadius=UDim.new(0,16),Parent=SBar})
-    New("Frame",{Size=UDim2.new(1,0,0,18),BackgroundColor3=C.BG1,BorderSizePixel=0,ZIndex=10,Parent=SBar})
-    New("Frame",{Size=UDim2.new(1,-20,0,1),Position=UDim2.new(0,10,0,1),BackgroundColor3=C.BG3,BorderSizePixel=0,Parent=SBar})
-    local StatLbl=New("TextLabel",{Size=UDim2.new(1,-140,1,0),Position=UDim2.new(0,10,0,0),
-        BackgroundTransparency=1,Text="✦  Ready  |  "..EXE,TextColor3=C.TXT1,
-        Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=15,Parent=SBar})
-    local InvLbl=New("TextLabel",{Size=UDim2.new(0,132,1,0),Position=UDim2.new(1,-135,0,0),
-        BackgroundTransparency=1,Text="Inv: "..invCnt.." blocks ✓",
-        TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=11,
-        TextXAlignment=Enum.TextXAlignment.Right,ZIndex=15,Parent=SBar})
+    New("Frame",{Size=UDim2.new(1,0,0,18),BackgroundColor3=C.BG1,
+        BorderSizePixel=0,ZIndex=10,Parent=SBar})
+    New("Frame",{Size=UDim2.new(1,-20,0,1),Position=UDim2.new(0,10,0,1),
+        BackgroundColor3=C.BG3,BorderSizePixel=0,Parent=SBar})
+    local StatLbl = New("TextLabel",{Size=UDim2.new(1,-140,1,0),
+        Position=UDim2.new(0,10,0,0),BackgroundTransparency=1,
+        Text="✦  Ready  |  "..EXE,TextColor3=C.TXT1,Font=Enum.Font.Gotham,
+        TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=15,Parent=SBar})
+    local InvLbl = New("TextLabel",{Size=UDim2.new(0,132,1,0),
+        Position=UDim2.new(1,-135,0,0),BackgroundTransparency=1,
+        Text="Inv:"..invCnt,TextColor3=C.LPRP,Font=Enum.Font.GothamBold,
+        TextSize=11,TextXAlignment=Enum.TextXAlignment.Right,ZIndex=15,Parent=SBar})
 
-    -- ════════════════════════════════════════════
-    -- WIDGET FACTORIES
-    -- ════════════════════════════════════════════
-    local Pages={} local Tabs={}
+    -- ── WIDGET FACTORIES ─────────────────────
+    local Pages = {}; local Tabs = {}
 
     local function Page(name)
-        local p=New("Frame",{Name="P_"..name,Size=UDim2.new(1,0,1,0),
+        local p = New("Frame",{Name="P_"..name,Size=UDim2.new(1,0,1,0),
             BackgroundTransparency=1,Visible=false,Parent=ContentSF})
-        New("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,8),Parent=p})
+        New("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,
+            Padding=UDim.new(0,8),Parent=p})
         New("UIPadding",{PaddingLeft=UDim.new(0,10),PaddingRight=UDim.new(0,10),
             PaddingTop=UDim.new(0,10),PaddingBottom=UDim.new(0,14),Parent=p})
-        Pages[name]=p; return p
+        Pages[name] = p; return p
     end
 
-    local function Sec(par,txt,ico)
-        local f=New("Frame",{Size=UDim2.new(1,0,0,28),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
+    local function Sec(par, txt, ico)
+        local f = New("Frame",{Size=UDim2.new(1,0,0,28),BackgroundColor3=C.BG2,
+            BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=f})
-        New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(44,18,105)),ColorSequenceKeypoint.new(1,Color3.fromRGB(19,9,55))}),Rotation=90,Parent=f})
-        local bar=New("Frame",{Size=UDim2.new(0,4,0.72,0),Position=UDim2.new(0,0,0.14,0),BackgroundColor3=C.PRP,BorderSizePixel=0,Parent=f})
+        New("UIGradient",{Color=ColorSequence.new({
+            ColorSequenceKeypoint.new(0,Color3.fromRGB(44,18,105)),
+            ColorSequenceKeypoint.new(1,Color3.fromRGB(19,9,55)),
+        }),Rotation=90,Parent=f})
+        local bar = New("Frame",{Size=UDim2.new(0,4,0.72,0),
+            Position=UDim2.new(0,0,0.14,0),BackgroundColor3=C.PRP,
+            BorderSizePixel=0,Parent=f})
         New("UICorner",{CornerRadius=UDim.new(1,0),Parent=bar})
-        New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,C.CYN),ColorSequenceKeypoint.new(1,C.PRP)}),Rotation=90,Parent=bar})
+        New("UIGradient",{Color=ColorSequence.new({
+            ColorSequenceKeypoint.new(0,C.CYN),ColorSequenceKeypoint.new(1,C.PRP),
+        }),Rotation=90,Parent=bar})
         New("TextLabel",{Size=UDim2.new(1,-14,1,0),Position=UDim2.new(0,12,0,0),
-            BackgroundTransparency=1,Text=(ico or "◆").."  "..txt,TextColor3=C.LPRP,
-            Font=Enum.Font.GothamBold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left,Parent=f})
-        return f
+            BackgroundTransparency=1,Text=(ico or "◆").."  "..txt,
+            TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=12,
+            TextXAlignment=Enum.TextXAlignment.Left,Parent=f})
     end
 
-    local function Btn(par,txt,col,cb,ico)
-        col=col or C.PRP
-        local r2,g2,b2=col.R*255,col.G*255,col.B*255
-        local dark=Color3.fromRGB(math.floor(r2*.2),math.floor(g2*.2),math.floor(b2*.2))
-        local mid=Color3.fromRGB(math.floor(r2*.38),math.floor(g2*.38),math.floor(b2*.38))
-        local btn=New("TextButton",{Size=UDim2.new(1,0,0,36),BackgroundColor3=dark,
+    local function Btn(par, txt, col, cb, ico)
+        col = col or C.PRP
+        local r2,g2,b2 = col.R*255, col.G*255, col.B*255
+        local dk = Color3.fromRGB(math.floor(r2*.2),math.floor(g2*.2),math.floor(b2*.2))
+        local md = Color3.fromRGB(math.floor(r2*.38),math.floor(g2*.38),math.floor(b2*.38))
+        local b = New("TextButton",{Size=UDim2.new(1,0,0,36),BackgroundColor3=dk,
             BorderSizePixel=0,Text=(ico and ico.."  " or "")..txt,
             TextColor3=C.TXT0,Font=Enum.Font.GothamBold,TextSize=13,
             AutoButtonColor=false,Parent=par})
-        New("UICorner",{CornerRadius=UDim.new(0,9),Parent=btn})
-        New("UIStroke",{Color=col,Thickness=1.5,Parent=btn})
-        btn.MouseEnter:Connect(function() Tw(btn,{BackgroundColor3=mid},.12) end)
-        btn.MouseLeave:Connect(function() Tw(btn,{BackgroundColor3=dark},.12) end)
-        btn.MouseButton1Down:Connect(function() Tw(btn,{BackgroundColor3=col},.07) end)
-        btn.MouseButton1Up:Connect(function() Tw(btn,{BackgroundColor3=mid},.1) end)
-        if cb then btn.MouseButton1Click:Connect(cb) end
-        return btn
+        New("UICorner",{CornerRadius=UDim.new(0,9),Parent=b})
+        New("UIStroke",{Color=col,Thickness=1.5,Parent=b})
+        b.MouseEnter:Connect(function() Tw(b,{BackgroundColor3=md},.12) end)
+        b.MouseLeave:Connect(function() Tw(b,{BackgroundColor3=dk},.12) end)
+        b.MouseButton1Down:Connect(function() Tw(b,{BackgroundColor3=col},.07) end)
+        b.MouseButton1Up:Connect(function() Tw(b,{BackgroundColor3=md},.1) end)
+        if cb then b.MouseButton1Click:Connect(cb) end
+        return b
     end
 
-    local function InBox(par,ph,def,h)
-        local ctr=New("Frame",{Size=UDim2.new(1,0,0,h or 33),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
+    local function InBox(par, ph, def, h)
+        local ctr = New("Frame",{Size=UDim2.new(1,0,0,h or 33),
+            BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ctr})
-        local st=New("UIStroke",{Color=C.BG3,Thickness=1.5,Parent=ctr})
-        local tb=New("TextBox",{Size=UDim2.new(1,-14,1,0),Position=UDim2.new(0,7,0,0),
-            BackgroundTransparency=1,Text=def or "",PlaceholderText=ph or "",
-            PlaceholderColor3=C.TXT2,TextColor3=C.TXT0,Font=Enum.Font.Gotham,
-            TextSize=12,ClearTextOnFocus=false,Parent=ctr})
-        tb.Focused:Connect(function() pcall(function() Tw(st,{Color=C.PRP},.2) Tw(ctr,{BackgroundColor3=C.BG3},.2) end) end)
-        tb.FocusLost:Connect(function() pcall(function() Tw(st,{Color=C.BG3},.2) Tw(ctr,{BackgroundColor3=C.BG2},.2) end) end)
-        return tb,ctr
+        local st = New("UIStroke",{Color=C.BG3,Thickness=1.5,Parent=ctr})
+        local tb = New("TextBox",{Size=UDim2.new(1,-14,1,0),
+            Position=UDim2.new(0,7,0,0),BackgroundTransparency=1,
+            Text=def or "",PlaceholderText=ph or "",
+            PlaceholderColor3=C.TXT2,TextColor3=C.TXT0,
+            Font=Enum.Font.Gotham,TextSize=12,ClearTextOnFocus=false,Parent=ctr})
+        tb.Focused:Connect(function()
+            pcall(function() Tw(st,{Color=C.PRP},.2); Tw(ctr,{BackgroundColor3=C.BG3},.2) end)
+        end)
+        tb.FocusLost:Connect(function()
+            pcall(function() Tw(st,{Color=C.BG3},.2); Tw(ctr,{BackgroundColor3=C.BG2},.2) end)
+        end)
+        return tb, ctr
     end
 
-    local function BigIn(par,ph,h)
-        local ctr=New("Frame",{Size=UDim2.new(1,0,0,h or 85),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
+    local function BigIn(par, ph, h)
+        local ctr = New("Frame",{Size=UDim2.new(1,0,0,h or 85),
+            BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ctr})
         New("UIStroke",{Color=C.BG3,Thickness=1.5,Parent=ctr})
-        local tb=New("TextBox",{Size=UDim2.new(1,-10,1,-6),Position=UDim2.new(0,5,0,3),
-            BackgroundTransparency=1,Text="",PlaceholderText=ph or "",
-            PlaceholderColor3=C.TXT2,TextColor3=C.TXT0,Font=Enum.Font.Code,
-            TextSize=10,MultiLine=true,ClearTextOnFocus=false,
-            TextXAlignment=Enum.TextXAlignment.Left,TextYAlignment=Enum.TextYAlignment.Top,Parent=ctr})
-        return tb,ctr
+        local tb = New("TextBox",{Size=UDim2.new(1,-10,1,-6),
+            Position=UDim2.new(0,5,0,3),BackgroundTransparency=1,Text="",
+            PlaceholderText=ph or "",PlaceholderColor3=C.TXT2,
+            TextColor3=C.TXT0,Font=Enum.Font.Code,TextSize=10,
+            MultiLine=true,ClearTextOnFocus=false,
+            TextXAlignment=Enum.TextXAlignment.Left,
+            TextYAlignment=Enum.TextYAlignment.Top,Parent=ctr})
+        return tb, ctr
     end
 
-    local function Card(par,txt,col)
-        local f=New("Frame",{Size=UDim2.new(1,0,0,38),BackgroundColor3=col or C.BG2,BorderSizePixel=0,Parent=par})
+    local function Card(par, txt, col)
+        local f = New("Frame",{Size=UDim2.new(1,0,0,40),
+            BackgroundColor3=col or C.BG2,BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=f})
         New("UIStroke",{Color=C.BG3,Thickness=1,Parent=f})
-        local l=New("TextLabel",{Size=UDim2.new(1,-14,1,0),Position=UDim2.new(0,7,0,0),
-            BackgroundTransparency=1,Text=txt,TextColor3=C.TXT1,Font=Enum.Font.Gotham,
-            TextSize=11,TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Left,Parent=f})
-        return f,l
+        local l = New("TextLabel",{Size=UDim2.new(1,-14,1,0),
+            Position=UDim2.new(0,7,0,0),BackgroundTransparency=1,Text=txt,
+            TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=11,
+            TextWrapped=true,TextXAlignment=Enum.TextXAlignment.Left,Parent=f})
+        return f, l
     end
 
-    local function Toggle(par,lbl,def,cb)
-        local ctr=New("Frame",{Size=UDim2.new(1,0,0,33),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
+    local function Slider(par, lbl, mn, mx, def, cb)
+        local v = def or mn
+        local ctr = New("Frame",{Size=UDim2.new(1,0,0,48),
+            BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ctr})
-        New("TextLabel",{Size=UDim2.new(1,-58,1,0),Position=UDim2.new(0,9,0,0),
-            BackgroundTransparency=1,Text=lbl,TextColor3=C.TXT0,Font=Enum.Font.Gotham,TextSize=12,
-            TextXAlignment=Enum.TextXAlignment.Left,Parent=ctr})
-        local tbg=New("Frame",{Size=UDim2.new(0,42,0,20),Position=UDim2.new(1,-50,0.5,-10),
-            BackgroundColor3=def and C.PRP or C.BG0,BorderSizePixel=0,Parent=ctr})
-        New("UICorner",{CornerRadius=UDim.new(1,0),Parent=tbg})
-        New("UIStroke",{Color=def and C.PRP or C.TXT2,Thickness=1.5,Parent=tbg})
-        local kn=New("Frame",{Size=UDim2.new(0,14,0,14),
-            Position=def and UDim2.new(1,-17,0.5,-7) or UDim2.new(0,3,0.5,-7),
-            BackgroundColor3=C.WHT,BorderSizePixel=0,Parent=tbg})
-        New("UICorner",{CornerRadius=UDim.new(1,0),Parent=kn})
-        local v=def or false
-        New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=10,Parent=ctr}).MouseButton1Click:Connect(function()
-            v=not v
-            pcall(function() Tw(tbg,{BackgroundColor3=v and C.PRP or C.BG0},.2) Tw(kn,{Position=v and UDim2.new(1,-17,0.5,-7) or UDim2.new(0,3,0.5,-7)},.2) end)
-            if cb then cb(v) end
-        end)
-        return ctr,function() return v end
-    end
-
-    local function Slider(par,lbl,mn,mx,def,cb)
-        local v=def or mn
-        local ctr=New("Frame",{Size=UDim2.new(1,0,0,48),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
-        New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ctr})
-        local row=New("Frame",{Size=UDim2.new(1,-14,0,16),Position=UDim2.new(0,7,0,4),BackgroundTransparency=1,Parent=ctr})
-        New("TextLabel",{Size=UDim2.new(.72,0,1,0),BackgroundTransparency=1,Text=lbl,TextColor3=C.TXT0,Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,Parent=row})
-        local vl=New("TextLabel",{Size=UDim2.new(.28,0,1,0),Position=UDim2.new(.72,0,0,0),BackgroundTransparency=1,Text=tostring(v),TextColor3=C.CYN,Font=Enum.Font.GothamBold,TextSize=12,TextXAlignment=Enum.TextXAlignment.Right,Parent=row})
-        local trk=New("Frame",{Size=UDim2.new(1,-14,0,6),Position=UDim2.new(0,7,0,28),BackgroundColor3=C.BG0,BorderSizePixel=0,Parent=ctr})
+        local row = New("Frame",{Size=UDim2.new(1,-14,0,16),
+            Position=UDim2.new(0,7,0,4),BackgroundTransparency=1,Parent=ctr})
+        New("TextLabel",{Size=UDim2.new(.72,0,1,0),BackgroundTransparency=1,
+            Text=lbl,TextColor3=C.TXT0,Font=Enum.Font.Gotham,TextSize=11,
+            TextXAlignment=Enum.TextXAlignment.Left,Parent=row})
+        local vl = New("TextLabel",{Size=UDim2.new(.28,0,1,0),
+            Position=UDim2.new(.72,0,0,0),BackgroundTransparency=1,
+            Text=tostring(v),TextColor3=C.CYN,Font=Enum.Font.GothamBold,
+            TextSize=12,TextXAlignment=Enum.TextXAlignment.Right,Parent=row})
+        local trk = New("Frame",{Size=UDim2.new(1,-14,0,6),
+            Position=UDim2.new(0,7,0,28),BackgroundColor3=C.BG0,
+            BorderSizePixel=0,Parent=ctr})
         New("UICorner",{CornerRadius=UDim.new(1,0),Parent=trk})
-        local fill=New("Frame",{Size=UDim2.new((v-mn)/(mx-mn),0,1,0),BackgroundColor3=C.PRP,BorderSizePixel=0,Parent=trk})
+        local fill = New("Frame",{Size=UDim2.new((v-mn)/(mx-mn),0,1,0),
+            BackgroundColor3=C.PRP,BorderSizePixel=0,Parent=trk})
         New("UICorner",{CornerRadius=UDim.new(1,0),Parent=fill})
-        New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,C.DPRP),ColorSequenceKeypoint.new(1,C.CYN)}),Parent=fill})
-        local kn=New("Frame",{Size=UDim2.new(0,14,0,14),AnchorPoint=Vector2.new(.5,.5),Position=UDim2.new((v-mn)/(mx-mn),0,.5,0),BackgroundColor3=C.WHT,BorderSizePixel=0,ZIndex=10,Parent=trk})
+        New("UIGradient",{Color=ColorSequence.new({
+            ColorSequenceKeypoint.new(0,C.DPRP),ColorSequenceKeypoint.new(1,C.CYN),
+        }),Parent=fill})
+        local kn = New("Frame",{Size=UDim2.new(0,14,0,14),
+            AnchorPoint=Vector2.new(.5,.5),
+            Position=UDim2.new((v-mn)/(mx-mn),0,.5,0),
+            BackgroundColor3=C.WHT,BorderSizePixel=0,ZIndex=10,Parent=trk})
         New("UICorner",{CornerRadius=UDim.new(1,0),Parent=kn})
         New("UIStroke",{Color=C.PRP,Thickness=2,Parent=kn})
-        local drag=false
-        local sb=New("TextButton",{Size=UDim2.new(1,0,0,30),Position=UDim2.new(0,0,0,18),BackgroundTransparency=1,Text="",ZIndex=20,Parent=ctr})
-        local function upd(mx2)
-            local rx=math.clamp((mx2-trk.AbsolutePosition.X)/trk.AbsoluteSize.X,0,1)
-            v=math.floor(mn+rx*(mx-mn))
-            pcall(function() vl.Text=tostring(v) fill.Size=UDim2.new(rx,0,1,0) kn.Position=UDim2.new(rx,0,.5,0) end)
-            if cb then cb(v) end
-        end
-        sb.MouseButton1Down:Connect(function() drag=true; upd(Mouse.X) end)
-        UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then drag=false end end)
-        RunService.Heartbeat:Connect(function() if drag then pcall(upd,Mouse.X) end end)
-        return ctr,function() return v end
+        local drag = false
+        New("TextButton",{Size=UDim2.new(1,0,0,30),Position=UDim2.new(0,0,0,18),
+            BackgroundTransparency=1,Text="",ZIndex=20,Parent=ctr}
+        ).MouseButton1Down:Connect(function() drag = true end)
+        UIS.InputEnded:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = false end
+        end)
+        RunService.Heartbeat:Connect(function()
+            if drag then pcall(function()
+                local rx = math.clamp(
+                    (Mouse.X - trk.AbsolutePosition.X) / trk.AbsoluteSize.X, 0, 1)
+                v = math.floor(mn + rx*(mx-mn))
+                vl.Text = tostring(v)
+                fill.Size = UDim2.new(rx,0,1,0)
+                kn.Position = UDim2.new(rx,0,.5,0)
+                if cb then cb(v) end
+            end) end
+        end)
+        return ctr, function() return v end
     end
 
-    local function Dropdown(par,lbl,opts,def,cb)
-        local sel=def or opts[1]; local open=false
-        local ctr=New("Frame",{Size=UDim2.new(1,0,0,33),BackgroundColor3=C.BG2,BorderSizePixel=0,ClipsDescendants=false,ZIndex=50,Parent=par})
+    local function Dropdown(par, lbl, opts, def, cb)
+        local sel = def or opts[1]; local open = false
+        local ctr = New("Frame",{Size=UDim2.new(1,0,0,33),BackgroundColor3=C.BG2,
+            BorderSizePixel=0,ClipsDescendants=false,ZIndex=50,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=ctr})
         New("UIStroke",{Color=C.BG3,Thickness=1,Parent=ctr})
-        New("TextLabel",{Size=UDim2.new(0,80,1,0),Position=UDim2.new(0,7,0,0),BackgroundTransparency=1,Text=lbl,TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=51,Parent=ctr})
-        local vl=New("TextLabel",{Size=UDim2.new(1,-100,1,0),Position=UDim2.new(0,84,0,0),BackgroundTransparency=1,Text=sel,TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,ZIndex=51,Parent=ctr})
-        local arr=New("TextLabel",{Size=UDim2.new(0,14,1,0),Position=UDim2.new(1,-16,0,0),BackgroundTransparency=1,Text="▼",TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=8,ZIndex=51,Parent=ctr})
-        New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=52,Parent=ctr}).MouseButton1Click:Connect(function()
-            open=not open
-            local dl=ctr:FindFirstChild("DropList")
-            if dl then dl.Visible=open end
-            arr.Text=open and "▲" or "▼"
+        New("TextLabel",{Size=UDim2.new(0,80,1,0),Position=UDim2.new(0,7,0,0),
+            BackgroundTransparency=1,Text=lbl,TextColor3=C.TXT1,
+            Font=Enum.Font.Gotham,TextSize=11,
+            TextXAlignment=Enum.TextXAlignment.Left,ZIndex=51,Parent=ctr})
+        local vl = New("TextLabel",{Size=UDim2.new(1,-100,1,0),
+            Position=UDim2.new(0,84,0,0),BackgroundTransparency=1,
+            Text=sel,TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=11,
+            TextXAlignment=Enum.TextXAlignment.Left,ZIndex=51,Parent=ctr})
+        local arr = New("TextLabel",{Size=UDim2.new(0,14,1,0),
+            Position=UDim2.new(1,-16,0,0),BackgroundTransparency=1,
+            Text="▼",TextColor3=C.LPRP,Font=Enum.Font.GothamBold,
+            TextSize=8,ZIndex=51,Parent=ctr})
+        New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
+            Text="",ZIndex=52,Parent=ctr}
+        ).MouseButton1Click:Connect(function()
+            open = not open
+            local dl = ctr:FindFirstChild("DL")
+            if dl then dl.Visible = open end
+            arr.Text = open and "▲" or "▼"
         end)
-        local maxH=math.min(#opts*26,140)
-        local dl=New("Frame",{Name="DropList",Size=UDim2.new(1,0,0,maxH),Position=UDim2.new(0,0,1,2),BackgroundColor3=Color3.fromRGB(14,8,40),BorderSizePixel=0,Visible=false,ZIndex=300,ClipsDescendants=true,Parent=ctr})
+        local maxH = math.min(#opts*26, 140)
+        local dl = New("Frame",{Name="DL",Size=UDim2.new(1,0,0,maxH),
+            Position=UDim2.new(0,0,1,2),BackgroundColor3=Color3.fromRGB(14,8,40),
+            BorderSizePixel=0,Visible=false,ZIndex=300,ClipsDescendants=true,Parent=ctr})
         New("UICorner",{CornerRadius=UDim.new(0,8),Parent=dl})
         New("UIStroke",{Color=C.PRP,Thickness=1,Parent=dl})
-        local sc=New("ScrollingFrame",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,ScrollBarThickness=3,ScrollBarImageColor3=C.PRP,CanvasSize=UDim2.new(1,0,0,#opts*26),ZIndex=301,Parent=dl})
+        local sc = New("ScrollingFrame",{Size=UDim2.new(1,0,1,0),
+            BackgroundTransparency=1,ScrollBarThickness=3,
+            ScrollBarImageColor3=C.PRP,CanvasSize=UDim2.new(1,0,0,#opts*26),
+            ZIndex=301,Parent=dl})
         New("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,Parent=sc})
-        for _,opt in ipairs(opts) do
-            local ob=New("TextButton",{Size=UDim2.new(1,0,0,26),BackgroundColor3=Color3.fromRGB(14,8,40),BorderSizePixel=0,Text=opt,TextColor3=C.TXT0,Font=Enum.Font.Gotham,TextSize=11,AutoButtonColor=false,ZIndex=302,Parent=sc})
-            ob.MouseEnter:Connect(function() pcall(function() Tw(ob,{BackgroundColor3=C.BG3},.1) end) end)
-            ob.MouseLeave:Connect(function() pcall(function() Tw(ob,{BackgroundColor3=Color3.fromRGB(14,8,40)},.1) end) end)
+        for _, opt in ipairs(opts) do
+            local ob = New("TextButton",{Size=UDim2.new(1,0,0,26),
+                BackgroundColor3=Color3.fromRGB(14,8,40),BorderSizePixel=0,
+                Text=opt,TextColor3=C.TXT0,Font=Enum.Font.Gotham,TextSize=11,
+                AutoButtonColor=false,ZIndex=302,Parent=sc})
+            ob.MouseEnter:Connect(function()
+                pcall(function() Tw(ob,{BackgroundColor3=C.BG3},.1) end)
+            end)
+            ob.MouseLeave:Connect(function()
+                pcall(function() Tw(ob,{BackgroundColor3=Color3.fromRGB(14,8,40)},.1) end)
+            end)
             ob.MouseButton1Click:Connect(function()
                 sel=opt; vl.Text=opt; open=false; dl.Visible=false; arr.Text="▼"
                 if cb then cb(opt) end
             end)
         end
-        return ctr,function() return sel end
+        return ctr, function() return sel end
     end
 
-    local function FileBrowser(par,folder,ext,onLoad)
-        local ac=ext==".build" and C.PRP or C.CYN
-        local ico=ext==".build" and "🏗" or "📄"
-        local wrap=New("Frame",{Size=UDim2.new(1,0,0,168),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
+    local function FileBrowser(par, folder, ext, onLoad)
+        local ac = ext==".build" and C.PRP or C.CYN
+        local ico = ext==".build" and "🏗" or "📄"
+        local wrap = New("Frame",{Size=UDim2.new(1,0,0,168),
+            BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=par})
         New("UICorner",{CornerRadius=UDim.new(0,10),Parent=wrap})
         New("UIStroke",{Color=ac,Thickness=1.5,Parent=wrap})
-        local hs=New("Frame",{Size=UDim2.new(1,0,0,28),BackgroundColor3=ac,BorderSizePixel=0,Parent=wrap})
+        local hs = New("Frame",{Size=UDim2.new(1,0,0,28),
+            BackgroundColor3=ac,BorderSizePixel=0,Parent=wrap})
         New("UICorner",{CornerRadius=UDim.new(0,10),Parent=hs})
-        New("Frame",{Size=UDim2.new(1,0,0,14),Position=UDim2.new(0,0,1,-14),BackgroundColor3=ac,BorderSizePixel=0,Parent=hs})
-        New("TextLabel",{Size=UDim2.new(1,-86,1,0),Position=UDim2.new(0,9,0,0),BackgroundTransparency=1,
-            Text=ico.."  "..folder.."/   ["..ext.." only]",
-            TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,Parent=hs})
-        local rb=New("TextButton",{Size=UDim2.new(0,66,0,20),Position=UDim2.new(1,-70,0.5,-10),
-            BackgroundColor3=Color3.fromRGB(0,0,0),BackgroundTransparency=.45,BorderSizePixel=0,
-            Text="🔄 Refresh",TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=10,
+        New("Frame",{Size=UDim2.new(1,0,0,14),Position=UDim2.new(0,0,1,-14),
+            BackgroundColor3=ac,BorderSizePixel=0,Parent=hs})
+        New("TextLabel",{Size=UDim2.new(1,-86,1,0),Position=UDim2.new(0,9,0,0),
+            BackgroundTransparency=1,Text=ico.."  "..folder.."/  ["..ext.."]",
+            TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=11,
+            TextXAlignment=Enum.TextXAlignment.Left,Parent=hs})
+        local rb = New("TextButton",{Size=UDim2.new(0,66,0,20),
+            Position=UDim2.new(1,-70,0.5,-10),BackgroundColor3=C.BG0,
+            BackgroundTransparency=.4,BorderSizePixel=0,Text="🔄 Refresh",
+            TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=10,
             AutoButtonColor=false,Parent=hs})
         New("UICorner",{CornerRadius=UDim.new(0,5),Parent=rb})
-        local ls=New("ScrollingFrame",{Size=UDim2.new(1,-6,0,133),Position=UDim2.new(0,3,0,31),
-            BackgroundTransparency=1,ScrollBarThickness=3,ScrollBarImageColor3=ac,
-            CanvasSize=UDim2.new(1,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y,Parent=wrap})
-        New("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,2),Parent=ls})
+        local ls = New("ScrollingFrame",{Size=UDim2.new(1,-6,0,133),
+            Position=UDim2.new(0,3,0,31),BackgroundTransparency=1,
+            ScrollBarThickness=3,ScrollBarImageColor3=ac,
+            CanvasSize=UDim2.new(1,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y,
+            Parent=wrap})
+        New("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,
+            Padding=UDim.new(0,2),Parent=ls})
         New("UIPadding",{PaddingAll=UDim.new(0,3),Parent=ls})
         local function Refresh()
-            for _,c in ipairs(ls:GetChildren()) do
-                if not c:IsA("UIListLayout") and not c:IsA("UIPadding") then c:Destroy() end
+            for _, c in ipairs(ls:GetChildren()) do
+                if not c:IsA("UIListLayout") and not c:IsA("UIPadding") then
+                    c:Destroy()
+                end
             end
-            local files=LsExt(folder,ext)
-            if #files==0 then
-                New("TextLabel",{Size=UDim2.new(1,0,0,50),BackgroundTransparency=1,
+            local files = LsExt(folder, ext)
+            if #files == 0 then
+                New("TextLabel",{Size=UDim2.new(1,0,0,50),
+                    BackgroundTransparency=1,
                     Text="Tidak ada file "..ext.." di '"..folder.."/'\nLetakkan file lalu Refresh.",
-                    TextColor3=C.TXT2,Font=Enum.Font.Gotham,TextSize=11,TextWrapped=true,Parent=ls})
+                    TextColor3=C.TXT2,Font=Enum.Font.Gotham,TextSize=11,
+                    TextWrapped=true,Parent=ls})
                 return
             end
-            for _,f in ipairs(files) do
-                local row=New("Frame",{Size=UDim2.new(1,-2,0,28),BackgroundColor3=Color3.fromRGB(13,7,38),BorderSizePixel=0,Parent=ls})
+            for _, f in ipairs(files) do
+                local row = New("Frame",{Size=UDim2.new(1,-2,0,28),
+                    BackgroundColor3=Color3.fromRGB(13,7,38),BorderSizePixel=0,Parent=ls})
                 New("UICorner",{CornerRadius=UDim.new(0,6),Parent=row})
-                New("TextLabel",{Size=UDim2.new(0,20,1,0),Position=UDim2.new(0,3,0,0),BackgroundTransparency=1,Text=ico,TextColor3=ac,Font=Enum.Font.GothamBold,TextSize=12,Parent=row})
-                New("TextLabel",{Size=UDim2.new(1,-80,1,0),Position=UDim2.new(0,24,0,0),BackgroundTransparency=1,Text=f.name,TextColor3=C.TXT0,Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd,Parent=row})
-                local lb2=New("TextButton",{Size=UDim2.new(0,50,0,18),Position=UDim2.new(1,-54,0.5,-9),BackgroundColor3=ac,BorderSizePixel=0,Text="▶ Load",TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=10,AutoButtonColor=false,Parent=row})
+                New("TextLabel",{Size=UDim2.new(0,20,1,0),
+                    Position=UDim2.new(0,3,0,0),BackgroundTransparency=1,
+                    Text=ico,TextColor3=ac,Font=Enum.Font.GothamBold,
+                    TextSize=12,Parent=row})
+                New("TextLabel",{Size=UDim2.new(1,-80,1,0),
+                    Position=UDim2.new(0,24,0,0),BackgroundTransparency=1,
+                    Text=f.name,TextColor3=C.TXT0,Font=Enum.Font.Gotham,
+                    TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,
+                    TextTruncate=Enum.TextTruncate.AtEnd,Parent=row})
+                local lb2 = New("TextButton",{Size=UDim2.new(0,50,0,18),
+                    Position=UDim2.new(1,-54,0.5,-9),BackgroundColor3=ac,
+                    BorderSizePixel=0,Text="▶ Load",TextColor3=C.WHT,
+                    Font=Enum.Font.GothamBold,TextSize=10,AutoButtonColor=false,Parent=row})
                 New("UICorner",{CornerRadius=UDim.new(0,5),Parent=lb2})
                 row.MouseEnter:Connect(function() Tw(row,{BackgroundColor3=C.BG3},.1) end)
-                row.MouseLeave:Connect(function() Tw(row,{BackgroundColor3=Color3.fromRGB(13,7,38)},.1) end)
+                row.MouseLeave:Connect(function()
+                    Tw(row,{BackgroundColor3=Color3.fromRGB(13,7,38)},.1)
+                end)
                 local function doLoad()
-                    local content=RdF(f.path) or RdF(folder.."/"..f.name)
-                    if not content then Notify("Error","Gagal baca: "..f.name,3); return end
-                    if onLoad then onLoad(f.name,content) end
+                    local content = RdF(f.path) or RdF(folder.."/"..f.name)
+                    if not content then
+                        Notify("Error","Gagal baca: "..f.name,3); return
+                    end
+                    if onLoad then onLoad(f.name, content) end
                 end
                 lb2.MouseButton1Click:Connect(doLoad)
-                New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5,Parent=row}).MouseButton1Click:Connect(doLoad)
+                New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
+                    Text="",ZIndex=5,Parent=row}).MouseButton1Click:Connect(doLoad)
             end
         end
         Refresh()
-        rb.MouseButton1Click:Connect(function() Refresh(); Notify("Refresh","List diperbarui",2) end)
+        rb.MouseButton1Click:Connect(function() Refresh(); Notify("Refresh","OK",2) end)
         return wrap
     end
 
-    -- ─── TAB SWITCH ─────────────────────────────
-    local tabDefs={
+    -- ── TAB BUTTONS ──────────────────────────
+    local tabDefs = {
         {n="Build",  lbl="🏗 Build"},
         {n="Shapes", lbl="⬡ Shapes"},
         {n="Convert",lbl="🔄 Convert"},
@@ -1139,422 +1094,483 @@ local function BuildUI()
     }
 
     local function SwitchTab(name)
-        St.tab=name
-        for _,p in pairs(Pages) do pcall(function() p.Visible=false end) end
-        for nm,b in pairs(Tabs) do
+        St.tab = name
+        for _, p in pairs(Pages) do pcall(function() p.Visible = false end) end
+        for nm, b in pairs(Tabs) do
             pcall(function()
-                if nm==name then Tw(b,{BackgroundColor3=C.PRP},.2); b.TextColor3=C.WHT
-                else Tw(b,{BackgroundColor3=C.BG3},.2); b.TextColor3=C.TXT2 end
+                if nm == name then
+                    Tw(b,{BackgroundColor3=C.PRP},.2); b.TextColor3 = C.WHT
+                else
+                    Tw(b,{BackgroundColor3=C.BG3},.2); b.TextColor3 = C.TXT2
+                end
             end)
         end
-        if Pages[name] then Pages[name].Visible=true end
-        StatLbl.Text="✦  "..name.."  |  "..EXE
+        if Pages[name] then Pages[name].Visible = true end
+        StatLbl.Text = "✦  "..name.."  |  "..EXE
     end
 
-    -- Buat 6 tab button dengan posisi manual absolut - PASTI tidak offside
-    for i,td in ipairs(tabDefs) do
-        local xpos = TAB_START + (i-1)*(TAB_W+TAB_GAP)
-        local b=New("TextButton",{
-            Size=UDim2.new(0,TAB_W,0,28),
+    -- 6 + 6×78 + 5×4 + 6 = 500px tepat
+    local TW, TG, TS = 78, 4, 6
+    for i, td in ipairs(tabDefs) do
+        local xpos = TS + (i-1)*(TW+TG)
+        local b = New("TextButton",{
+            Size=UDim2.new(0,TW,0,28),
             Position=UDim2.new(0,xpos,0,4),
             BackgroundColor3=C.BG3,BorderSizePixel=0,
             Text=td.lbl,TextColor3=C.TXT2,
             Font=Enum.Font.GothamBold,TextSize=9,
             AutoButtonColor=false,ZIndex=15,Parent=TabBG})
         New("UICorner",{CornerRadius=UDim.new(0,7),Parent=b})
-        Tabs[td.n]=b
+        Tabs[td.n] = b
         b.MouseButton1Click:Connect(function() SwitchTab(td.n) end)
     end
 
-    -- ════════════════════════════════════════════
+    -- ══════════════════════════════════════════
     -- PAGES
-    -- ════════════════════════════════════════════
+    -- ══════════════════════════════════════════
 
-    -- BUILD
-    local BP=Page("Build")
+    -- BUILD PAGE
+    local BP = Page("Build")
     Sec(BP,"📂  File .build  (folder: builds/)","")
-    FileBrowser(BP,"builds",".build",function(fname,content)
-        local d,e=ParseBuild(content)
-        if d then St.buildData=d; ScanInventory()
+    FileBrowser(BP,"builds",".build",function(fname, content)
+        local d, e = ParseBuild(content)
+        if d then
+            St.buildData = d; ScanInventory()
             Notify("Loaded ✓",fname.." | "..#d.blocks.." blocks",3)
-            StatLbl.Text="✅  "..fname.."  |  "..#d.blocks.." blocks"
+            StatLbl.Text = "✅  "..fname.."  |  "..#d.blocks.." blocks"
         else Notify("Error","Gagal: "..(e or "?"),3) end
     end)
     Sec(BP,"✏  Paste .build Manual","")
-    local bTB,_=BigIn(BP,'{"version":"1.0","blocks":[...]}')
+    local bTB, _ = BigIn(BP,'{"version":"1.0","blocks":[...]}')
     Btn(BP,"📋  Parse & Load",C.CYN,function()
-        local d,e=ParseBuild(bTB.Text)
-        if d then St.buildData=d; ScanInventory(); Notify("Loaded",d.name.." | "..#d.blocks.." blocks",3)
+        local d, e = ParseBuild(bTB.Text)
+        if d then
+            St.buildData = d; ScanInventory()
+            Notify("Loaded",d.name.." | "..#d.blocks.." blocks",3)
         else Notify("Error",e or "Gagal",3) end
     end,"📋")
+
     Sec(BP,"⚙  Opsi","")
-    Toggle(BP,"Auto Weld setelah build",true)
-    Slider(BP,"Delay per block (ms)",0,500,150,function(v) Placer.delay=v/1000 end)
-    Sec(BP,"🔍  Remote Spy Status","")
-    local _,spyStatL=Card(BP,"⏳ Spy aktif — place 1 block MANUAL dulu untuk capture format remote BABFT.")
+    Slider(BP,"Delay per block (ms)",100,2000,300,function(v) Placer.delay=v/1000 end)
 
-    -- Update spy status secara berkala
-    RunService.Heartbeat:Connect(function()
-        pcall(function()
-            if SpyData.ready then
-                spyStatL.Text="✅ Remote captured: "..SpyData.remote.Name.." | arg["..SpyData.blockArgIdx.."] = block name | "..#SpyData.log.." calls"
-                spyStatL.TextColor3=C.GRN
-            elseif #SpyData.log>0 then
-                local last=SpyData.log[#SpyData.log]
-                spyStatL.Text="🔍 Monitoring... "..#SpyData.log.." remotes detected | last: "..last.name
-                spyStatL.TextColor3=C.YLW
-            end
-        end)
-    end)
-
-    -- Tombol lihat log remote
-    Btn(BP,"📋  Lihat Log Remote (print console)",C.CYN,function()
-        print("═══ OxyX Remote Log ("..#SpyData.log.." entries) ═══")
-        for i,entry in ipairs(SpyData.log) do
-            print(i..") "..entry.path.." | args: "..#entry.args)
-            for j,arg in ipairs(entry.args) do
-                print("   ["..j.."] "..type(arg).." = "..tostring(arg))
-            end
+    Sec(BP,"🔧  Debug","")
+    -- *** PENTING: tombol debug untuk cari remote ***
+    Btn(BP,"🧪  Test Place 1 Block",C.CYN,function()
+        ScanInventory()
+        -- Cek BuildGui
+        local bg = PGui:FindFirstChild("BuildGui")
+        if not bg then
+            Notify("⚠ BuildGui","Tidak ketemu! Buka inventory BABFT dulu (klik ikon block di game)",4)
+            return
         end
-        if SpyData.ready then
-            print("✅ CAPTURED Remote: "..SpyData.remote:GetFullName())
-            print("   Block arg index: "..SpyData.blockArgIdx)
-        else
-            print("⚠ Belum capture — place 1 block manual di BABFT!")
-        end
-        Notify("Log","Remote log di-print ke console (F9)",4)
-    end,"📋")
-
-    Btn(BP,"🔄  Reset Spy",C.YLW,function()
-        SpyData.remote=nil SpyData.args=nil SpyData.blockArgIdx=nil
-        SpyData.ready=false SpyData.log={}
-        spyStatL.Text="⏳ Spy direset — place 1 block manual dulu."
-        spyStatL.TextColor3=C.TXT1
-        Notify("Spy","Reset, place block manual lagi",3)
-    end,"🔄")
+        local bd = FindBlock("Wood Block")
+        local ok, name = Placer:PlaceOne(bd, 0)
+        Notify("Test",name..(ok and " → dipilih!" or " → tidak ketemu di BuildGui"),3)
+    end,"🧪")
+    -- Info cara pakai
+    Card(BP,"ℹ️  CARA PAKAI BUILD:
+1. Di BABFT, buka Build Mode (klik tombol build)
+2. Klik Scan Inventory di tab Blocks
+3. Load file .build
+4. Klik MULAI AUTO BUILD")
 
     Sec(BP,"🚀  Build","")
-    local _,bStatL=Card(BP,"Belum ada build. Load file .build di atas.")
+    local _, bStatL = Card(BP,"Belum ada build. Load file .build di atas.")
     RunService.Heartbeat:Connect(function()
         if St.buildData then pcall(function()
-            bStatL.Text="📦  "..(St.buildData.name or "?").."  |  "..#St.buildData.blocks.." blocks"
-            bStatL.TextColor3=C.GRN
+            bStatL.Text = "📦  "..(St.buildData.name or "?").."  |  "
+                ..#St.buildData.blocks.." blocks"
+            bStatL.TextColor3 = C.GRN
         end) end
     end)
     Btn(BP,"▶▶  MULAI AUTO BUILD  ◀◀",C.GRN,function()
-        if not St.buildData then Notify("Error","Load file .build dulu!",3); return end
+        if not St.buildData then Notify("Error","Load .build dulu!",3); return end
         ScanInventory()
-        local total=#St.buildData.blocks
-        PBG.Visible=true; PLbl.Visible=true; PFill.Size=UDim2.new(0,0,1,0)
-        StatLbl.Text="🔨  Building 0/"..total
-        Placer:Build(St.buildData,function(i,tot,used,ok2)
+        local total = #St.buildData.blocks
+        PBG.Visible = true; PLbl.Visible = true
+        PFill.Size = UDim2.new(0,0,1,0)
+        StatLbl.Text = "🔨  Building 0/"..total
+        Placer:Build(St.buildData,function(i, tot, used, ok2)
             pcall(function()
                 Tw(PFill,{Size=UDim2.new(i/tot,0,1,0)},.1)
-                if used=="DONE" then
-                    PLbl.Text="✅  Selesai! "..tot.." blocks"
-                    StatLbl.Text="✅  Selesai! "..tot.." blocks"
-                    task.delay(4,function() pcall(function() PBG.Visible=false; PLbl.Visible=false end) end)
+                if used == "DONE" then
+                    PLbl.Text = "✅  Selesai! "..Placer.placed.."/"..tot.." blocks"
+                    StatLbl.Text = "✅  Selesai! "..Placer.placed.."/"..tot
+                    task.delay(5,function()
+                        pcall(function() PBG.Visible=false; PLbl.Visible=false end)
+                    end)
                 else
-                    PLbl.Text="🔨  ["..i.."/"..tot.."]  "..used..(ok2 and "" or "  ⚠")
-                    StatLbl.Text="🔨  ["..i.."/"..tot.."]"
+                    PLbl.Text = "🔨  ["..i.."/"..tot.."]  "..used
+                    StatLbl.Text = "🔨  ["..i.."/"..tot.."]"
                 end
             end)
         end)
     end,"▶")
     Btn(BP,"⏹  Stop Build",C.YLW,function() Placer:Stop() end,"⏹")
     Btn(BP,"🗑  Hapus Data",C.RED,function()
-        St.buildData=nil; bTB.Text=""
-        bStatL.Text="Belum ada build."; bStatL.TextColor3=C.TXT1
-        StatLbl.Text="✦  Ready  |  "..EXE
+        St.buildData = nil; bTB.Text = ""
+        bStatL.Text = "Belum ada build."; bStatL.TextColor3 = C.TXT1
+        StatLbl.Text = "✦  Ready  |  "..EXE
         Notify("Clear","Data dihapus",2)
     end,"🗑")
 
-    -- SHAPES
-    local ShP=Page("Shapes")
+    -- SHAPES PAGE
+    local ShP = Page("Shapes")
     Sec(ShP,"⬡  Shape","")
-    local _,getShape=Dropdown(ShP,"Shape:",{"Ball","Cylinder","Triangle","Pyramid","Platform","HollowBox","BoatHull"},"Ball",function(v) St.stype=v end)
-    local bnames={}; for _,b in ipairs(DB) do bnames[#bnames+1]=b.n end
-    local _,getSBlock=Dropdown(ShP,"Block:",bnames,"Wood Block",function(v) St.sblock=v end)
+    local _, getShape = Dropdown(ShP,"Shape:",
+        {"Ball","Cylinder","Platform","BoatHull"},"Platform")
+    local bnames = {}
+    for _, b in ipairs(DB) do bnames[#bnames+1] = b.n end
+    local _, getSBlock = Dropdown(ShP,"Block:",bnames,"Wood Block")
     Sec(ShP,"📐  Parameter","")
-    Slider(ShP,"Radius / Base",1,15,3,function(v) St.sp.r=v; St.sp.base=v end)
-    Slider(ShP,"Height",1,20,5,function(v) St.sp.h=v end)
-    Slider(ShP,"Width",1,20,5,function(v) St.sp.w=v end)
-    Slider(ShP,"Length",1,30,8,function(v) St.sp.l=v end)
+    Slider(ShP,"Radius",1,10,3,function(v) St.sp.r=v end)
+    Slider(ShP,"Height",1,15,5,function(v) St.sp.h=v end)
+    Slider(ShP,"Width",1,15,5,function(v) St.sp.w=v end)
+    Slider(ShP,"Length",1,20,8,function(v) St.sp.l=v end)
     Sec(ShP,"🔨  Aksi","")
-    local _,prvL=Card(ShP,"Preview muncul di sini.")
+    local _, prvL = Card(ShP,"Preview muncul di sini.")
     Btn(ShP,"👁  Preview",C.CYN,function()
-        local d=SB.Run(getShape(),getSBlock(),St.sp)
-        if d then St.buildData=d; prvL.Text="🔮  "..getShape().." | "..#d.blocks.." blocks | "..getSBlock(); prvL.TextColor3=C.LPRP; Notify("Preview","Siap",2) end
+        local d = SB.Run(getShape(),getSBlock(),St.sp)
+        if d then
+            St.buildData = d
+            prvL.Text = "🔮  "..getShape().." | "..#d.blocks.." blk | "..getSBlock()
+            prvL.TextColor3 = C.LPRP
+            Notify("Preview","Siap! "..#d.blocks.." blocks",2)
+        end
     end,"👁")
     Btn(ShP,"🚀  Build Shape",C.GRN,function()
-        local d=SB.Run(getShape(),getSBlock(),St.sp)
+        local d = SB.Run(getShape(),getSBlock(),St.sp)
         if not d then Notify("Error","Gagal",3); return end
-        St.buildData=d
-        Placer:Build(d,function(i,tot,bn) if bn=="DONE" then Notify("Done","Shape selesai! "..tot,3) end end)
+        St.buildData = d
+        Placer:Build(d,function(i,tot,bn)
+            if bn=="DONE" then Notify("Done","Shape selesai!",3) end
+        end)
     end,"🚀")
     Btn(ShP,"💾  Simpan → builds/",C.PRP,function()
-        local d=SB.Run(getShape(),getSBlock(),St.sp)
+        local d = SB.Run(getShape(),getSBlock(),St.sp)
         if d then
-            local j=Ser(d.name,d.blocks)
-            if j and WrF("builds/"..d.name..".build",j) then Notify("Saved","builds/"..d.name..".build",3)
-            elseif j and setclipboard then setclipboard(j); Notify("Copied","Clipboard",3) end
+            local j = Ser(d.name, d.blocks)
+            if j and WrF("builds/"..d.name..".build",j) then
+                Notify("Saved","builds/",3)
+            elseif j and setclipboard then
+                setclipboard(j); Notify("Copied","Clipboard",3)
+            end
         end
     end,"💾")
 
-    -- CONVERT
-    local CP=Page("Convert")
+    -- CONVERT PAGE
+    local CP = Page("Convert")
     Sec(CP,"📄  File .json  (folder: json/)","")
-    FileBrowser(CP,"json",".json",function(fname,content)
-        local d,e=ParseJSON(content)
-        if d then St.buildData=d; Notify("Converted ✓",fname.." → "..#d.blocks.." blocks",3)
+    FileBrowser(CP,"json",".json",function(fname, content)
+        local d, e = ParseJSON(content)
+        if d then
+            St.buildData = d
+            Notify("Converted ✓",fname.." → "..#d.blocks.." blocks",3)
         else Notify("Error",e or "?",3) end
     end)
-    Sec(CP,"✏  Paste JSON Manual","")
-    local jTB,_=BigIn(CP,"Paste Roblox Studio JSON...")
+    Sec(CP,"✏  Paste JSON","")
+    local jTB, _ = BigIn(CP,"Paste JSON Roblox Studio...")
     Btn(CP,"🔄  Convert",C.CYN,function()
-        local d,e=ParseJSON(jTB.Text)
-        if d then St.buildData=d; Notify("Converted","→ "..#d.blocks.." blocks",3)
+        local d, e = ParseJSON(jTB.Text)
+        if d then St.buildData = d; Notify("Converted","→ "..#d.blocks.." blocks",3)
         else Notify("Error",e or "?",3) end
     end,"🔄")
-    Sec(CP,"🚢  Export Kapalku","")
+    Sec(CP,"🚢  Export Kapal","")
     Btn(CP,"🚢  Export Kapal → builds/",C.PRP,function()
         task.spawn(function()
-            local boat=nil
-            for _,c in ipairs(WS:GetDescendants()) do
-                if c:IsA("Model") and c.Name:find(LP.Name,1,true) then boat=c; break end
+            local boat = nil
+            for _, c in ipairs(WS:GetDescendants()) do
+                if c:IsA("Model") and c.Name:find(LP.Name,1,true) then
+                    boat = c; break
+                end
             end
-            if not boat then Notify("Error","Kapal tidak ditemukan",3); return end
-            local bl={}
+            if not boat then Notify("Error","Kapal tidak ketemu",3); return end
+            local bl = {}
             local function sc(p)
                 if p:IsA("BasePart") then
-                    local bd=FindBlock(p.Name); local pos=p.CFrame.Position
-                    bl[#bl+1]={id=bd.id,name=bd.n,position={x=pos.X,y=pos.Y,z=pos.Z},size={x=p.Size.X,y=p.Size.Y,z=p.Size.Z},color={r=math.floor(p.Color.R*255),g=math.floor(p.Color.G*255),b=math.floor(p.Color.B*255)}}
+                    local bd = FindBlock(p.Name)
+                    local pos = p.CFrame.Position
+                    bl[#bl+1] = {id=bd.id,name=bd.n,
+                        position={x=pos.X,y=pos.Y,z=pos.Z},
+                        size={x=p.Size.X,y=p.Size.Y,z=p.Size.Z},
+                        color={r=math.floor(p.Color.R*255),
+                            g=math.floor(p.Color.G*255),
+                            b=math.floor(p.Color.B*255)}}
                 end
-                for _,ch in ipairs(p:GetChildren()) do sc(ch) end
+                for _, ch in ipairs(p:GetChildren()) do sc(ch) end
             end
-            for _,ch in ipairs(boat:GetChildren()) do sc(ch) end
-            local j=Ser(boat.Name,bl)
+            for _, ch in ipairs(boat:GetChildren()) do sc(ch) end
+            local j = Ser(boat.Name, bl)
             if j then
-                local nm=boat.Name:gsub(" ","_")
-                if WrF("builds/"..nm..".build",j) then Notify("Export ✓","builds/"..nm..".build",4)
-                elseif setclipboard then setclipboard(j); Notify("Export","Di-copy",4) end
+                local nm = boat.Name:gsub(" ","_")
+                if WrF("builds/"..nm..".build",j) then
+                    Notify("Export ✓","builds/"..nm..".build",4)
+                elseif setclipboard then
+                    setclipboard(j); Notify("Export","Di-copy",4)
+                end
             end
         end)
     end,"🚢")
 
-    -- IMAGES
-    local IP=Page("Images")
-    Sec(IP,"🖼  Preview","")
-    local pC=New("Frame",{Size=UDim2.new(1,0,0,120),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=IP})
-    New("UICorner",{CornerRadius=UDim.new(0,10),Parent=pC}); New("UIStroke",{Color=C.BG3,Thickness=1.5,Parent=pC})
-    local pImg=New("ImageLabel",{Size=UDim2.new(0,100,0,100),Position=UDim2.new(0,10,0,10),BackgroundColor3=C.BG0,BorderSizePixel=0,Image="",ScaleType=Enum.ScaleType.Fit,Parent=pC})
-    New("UICorner",{CornerRadius=UDim.new(0,8),Parent=pImg}); New("UIStroke",{Color=C.PRP,Thickness=1,Parent=pImg})
-    local pIF=New("Frame",{Size=UDim2.new(1,-122,1,-10),Position=UDim2.new(0,118,0,5),BackgroundTransparency=1,Parent=pC})
-    local pSt=New("TextLabel",{Size=UDim2.new(1,0,0,15),BackgroundTransparency=1,Text="Belum ada",TextColor3=C.TXT2,Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,Parent=pIF})
-    local pId=New("TextLabel",{Size=UDim2.new(1,0,0,15),Position=UDim2.new(0,0,0,17),BackgroundTransparency=1,Text="ID: —",TextColor3=C.LPRP,Font=Enum.Font.Code,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,Parent=pIF})
+    -- IMAGES PAGE
+    local IP = Page("Images")
+    Sec(IP,"🖼  Preview & Decal","")
+    local pC = New("Frame",{Size=UDim2.new(1,0,0,120),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=IP})
+    New("UICorner",{CornerRadius=UDim.new(0,10),Parent=pC})
+    New("UIStroke",{Color=C.BG3,Thickness=1.5,Parent=pC})
+    local pImg = New("ImageLabel",{Size=UDim2.new(0,100,0,100),Position=UDim2.new(0,10,0,10),BackgroundColor3=C.BG0,BorderSizePixel=0,Image="",ScaleType=Enum.ScaleType.Fit,Parent=pC})
+    New("UICorner",{CornerRadius=UDim.new(0,8),Parent=pImg})
+    New("UIStroke",{Color=C.PRP,Thickness=1,Parent=pImg})
+    local pSt = New("TextLabel",{Size=UDim2.new(1,-122,0,15),Position=UDim2.new(0,118,0,8),BackgroundTransparency=1,Text="Belum ada",TextColor3=C.TXT2,Font=Enum.Font.Gotham,TextSize=11,TextXAlignment=Enum.TextXAlignment.Left,Parent=pC})
     Sec(IP,"📥  Asset ID","")
-    local asTB,_=InBox(IP,"rbxassetid:// atau ID angka...")
+    local asTB, _ = InBox(IP,"rbxassetid:// atau angka...")
     Btn(IP,"👁  Preview",C.CYN,function()
-        local id=asTB.Text; if id=="" then Notify("Error","Masukkan ID!",3); return end
-        local nid=id:match("^%d+$") and "rbxassetid://"..id or id
-        pcall(function() pImg.Image=nid end)
-        pSt.Text="✅ Dimuat"; pSt.TextColor3=C.GRN; pId.Text="ID: "..nid; Notify("Image","OK",2)
+        local id = asTB.Text
+        if id == "" then Notify("Error","Masukkan ID!",3); return end
+        local nid = id:match("^%d+$") and "rbxassetid://"..id or id
+        pcall(function() pImg.Image = nid end)
+        pSt.Text = "✅ "..nid; pSt.TextColor3 = C.GRN
+        Notify("Image","OK",2)
     end,"👁")
-    Sec(IP,"🎨  Terapkan ke Part","")
-    local ptTB,_=InBox(IP,"Nama Part di Workspace...")
-    local _,getFace=Dropdown(IP,"Face:",{"Front","Back","Left","Right","Top","Bottom"},"Front")
-    Btn(IP,"🖼  Terapkan Decal",C.PRP,function()
-        local id=asTB.Text; local pn=ptTB.Text
-        if id==""or pn=="" then Notify("Error","Isi keduanya!",3); return end
-        local part=WS:FindFirstChild(pn,true)
+    Sec(IP,"🎨  Apply Decal","")
+    local ptTB, _ = InBox(IP,"Nama Part di Workspace...")
+    local _, getFace = Dropdown(IP,"Face:",{"Front","Back","Left","Right","Top","Bottom"},"Front")
+    Btn(IP,"🖼  Apply Decal",C.PRP,function()
+        local id = asTB.Text; local pn = ptTB.Text
+        if id=="" or pn=="" then Notify("Error","Isi ID dan nama Part!",3); return end
+        local part = WS:FindFirstChild(pn,true)
         if not part then Notify("Error","Part tidak ada",3); return end
-        local nid=id:match("^%d+$") and "rbxassetid://"..id or id
-        pcall(function() local d=Instance.new("Decal"); d.Texture=nid; d.Face=Enum.NormalId[getFace()] or Enum.NormalId.Front; d.Parent=part end)
+        local nid = id:match("^%d+$") and "rbxassetid://"..id or id
+        pcall(function()
+            local d = Instance.new("Decal")
+            d.Texture = nid
+            d.Face = Enum.NormalId[getFace()] or Enum.NormalId.Front
+            d.Parent = part
+        end)
         Notify("Decal","Diterapkan ke "..pn,3)
     end,"🖼")
 
-    -- BLOCKS
-    local BkP=Page("Blocks")
+    -- BLOCKS PAGE
+    local BkP = Page("Blocks")
     Sec(BkP,"📋  Inventory","")
-    local _,invL=Card(BkP,"Klik Scan untuk baca inventory BABFT-mu.")
+    local _, invL = Card(BkP,"Klik Scan untuk baca inventory BABFT.")
     Btn(BkP,"🔄  Scan Inventory",C.CYN,function()
-        local cnt=ScanInventory()
-        invL.Text="✅  "..cnt.." jenis block tersedia di inventory-mu"; invL.TextColor3=C.GRN
-        InvLbl.Text="Inv: "..cnt.." blocks ✓"
-        Notify("Inventory",cnt.." block ditemukan",3)
+        local cnt = ScanInventory()
+        invL.Text = "✅  "..cnt.." jenis block di inventory-mu"
+        invL.TextColor3 = C.GRN
+        InvLbl.Text = "Inv:"..cnt
+        Notify("Inv",cnt.." block",3)
     end,"🔄")
     Sec(BkP,"📦  159 Blocks","")
-    local sTB,_=InBox(BkP,"Cari nama block...")
-    local catL={"Semua"}; local cs={}
-    for _,b in ipairs(DB) do if not cs[b.cat] then cs[b.cat]=true; catL[#catL+1]=b.cat end end
-    local _,getCat=Dropdown(BkP,"Kategori:",catL,"Semua")
-    local bF=New("Frame",{Size=UDim2.new(1,0,0,240),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=BkP})
+    local sTB, _ = InBox(BkP,"Cari block...")
+    local catL = {"Semua"}; local cs = {}
+    for _, b in ipairs(DB) do
+        if not cs[b.cat] then cs[b.cat]=true; catL[#catL+1]=b.cat end
+    end
+    local _, getCat = Dropdown(BkP,"Kategori:",catL,"Semua")
+    local bF = New("Frame",{Size=UDim2.new(1,0,0,240),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=BkP})
     New("UICorner",{CornerRadius=UDim.new(0,9),Parent=bF})
-    local bScr=New("ScrollingFrame",{Size=UDim2.new(1,-4,1,-4),Position=UDim2.new(0,2,0,2),BackgroundTransparency=1,ScrollBarThickness=4,ScrollBarImageColor3=C.PRP,CanvasSize=UDim2.new(1,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y,Parent=bF})
+    local bScr = New("ScrollingFrame",{Size=UDim2.new(1,-4,1,-4),Position=UDim2.new(0,2,0,2),BackgroundTransparency=1,ScrollBarThickness=4,ScrollBarImageColor3=C.PRP,CanvasSize=UDim2.new(1,0,0,0),AutomaticCanvasSize=Enum.AutomaticSize.Y,Parent=bF})
     New("UIListLayout",{SortOrder=Enum.SortOrder.LayoutOrder,Padding=UDim.new(0,2),Parent=bScr})
     New("UIPadding",{PaddingAll=UDim.new(0,3),Parent=bScr})
-    local _,selL=Card(BkP,"Klik block untuk place.")
-    local function RBlk(filter,cat)
-        for _,c in ipairs(bScr:GetChildren()) do
+    local _, selL = Card(BkP,"Klik block untuk select/place.")
+    local function RBlk(filter, cat)
+        for _, c in ipairs(bScr:GetChildren()) do
             if not c:IsA("UIListLayout") and not c:IsA("UIPadding") then c:Destroy() end
         end
-        for _,bl in ipairs(DB) do
-            local nm=(filter=="" or bl.n:lower():find(filter:lower(),1,true))
-            local cm=(cat=="Semua" or bl.cat==cat)
+        for _, bl in ipairs(DB) do
+            local nm = (filter=="" or bl.n:lower():find(filter:lower(),1,true))
+            local cm = (cat=="Semua" or bl.cat==cat)
             if nm and cm then
-                local inInv=INV[bl.n]~=nil
-                local row=New("Frame",{Size=UDim2.new(1,-2,0,26),BackgroundColor3=inInv and Color3.fromRGB(10,20,13) or Color3.fromRGB(11,7,33),BorderSizePixel=0,Parent=bScr})
+                local inInv = INV[bl.n] ~= nil
+                local row = New("Frame",{Size=UDim2.new(1,-2,0,26),
+                    BackgroundColor3=inInv and Color3.fromRGB(10,20,13) or Color3.fromRGB(11,7,33),
+                    BorderSizePixel=0,Parent=bScr})
                 New("UICorner",{CornerRadius=UDim.new(0,5),Parent=row})
                 if inInv then New("UIStroke",{Color=C.GRN,Thickness=1,Parent=row}) end
-                local idb=New("TextLabel",{Size=UDim2.new(0,28,0,14),Position=UDim2.new(0,2,0.5,-7),BackgroundColor3=C.DPRP,BorderSizePixel=0,Text="#"..bl.id,TextColor3=C.LPRP,Font=Enum.Font.GothamBold,TextSize=8,Parent=row})
+                local idb = New("TextLabel",{Size=UDim2.new(0,28,0,14),
+                    Position=UDim2.new(0,2,0.5,-7),BackgroundColor3=C.DPRP,
+                    BorderSizePixel=0,Text="#"..bl.id,TextColor3=C.LPRP,
+                    Font=Enum.Font.GothamBold,TextSize=8,Parent=row})
                 New("UICorner",{CornerRadius=UDim.new(0,3),Parent=idb})
                 if inInv then
-                    local ib=New("TextLabel",{Size=UDim2.new(0,16,0,13),Position=UDim2.new(0,32,0.5,-6.5),BackgroundColor3=C.GRN,BorderSizePixel=0,Text="✓",TextColor3=C.WHT,Font=Enum.Font.GothamBold,TextSize=8,Parent=row})
+                    local ib = New("TextLabel",{Size=UDim2.new(0,16,0,13),
+                        Position=UDim2.new(0,32,0.5,-6.5),BackgroundColor3=C.GRN,
+                        BorderSizePixel=0,Text="✓",TextColor3=C.WHT,
+                        Font=Enum.Font.GothamBold,TextSize=8,Parent=row})
                     New("UICorner",{CornerRadius=UDim.new(0,3),Parent=ib})
                 end
-                local nx=inInv and 52 or 33
-                New("TextLabel",{Size=UDim2.new(.5,-nx,1,0),Position=UDim2.new(0,nx,0,0),BackgroundTransparency=1,Text=bl.n,TextColor3=inInv and C.GRN or C.TXT0,Font=Enum.Font.Gotham,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,TextTruncate=Enum.TextTruncate.AtEnd,Parent=row})
-                local cb2=New("TextLabel",{Size=UDim2.new(.24,0,0,12),Position=UDim2.new(.53,0,.5,-6),BackgroundColor3=C.BG0,BorderSizePixel=0,Text=bl.cat,TextColor3=C.TXT2,Font=Enum.Font.Gotham,TextSize=8,Parent=row})
+                local nx = inInv and 52 or 33
+                New("TextLabel",{Size=UDim2.new(.5,-nx,1,0),Position=UDim2.new(0,nx,0,0),
+                    BackgroundTransparency=1,Text=bl.n,
+                    TextColor3=inInv and C.GRN or C.TXT0,
+                    Font=Enum.Font.Gotham,TextSize=10,
+                    TextXAlignment=Enum.TextXAlignment.Left,
+                    TextTruncate=Enum.TextTruncate.AtEnd,Parent=row})
+                local cb2 = New("TextLabel",{Size=UDim2.new(.24,0,0,12),
+                    Position=UDim2.new(.53,0,.5,-6),BackgroundColor3=C.BG0,
+                    BorderSizePixel=0,Text=bl.cat,TextColor3=C.TXT2,
+                    Font=Enum.Font.Gotham,TextSize=8,Parent=row})
                 New("UICorner",{CornerRadius=UDim.new(0,3),Parent=cb2})
-                New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,Text="",ZIndex=5,Parent=row}).MouseButton1Click:Connect(function()
-                    selL.Text=(inInv and "✅ " or "⚠ ")..bl.n.." | "..bl.cat..(inInv and " | ✓ PUNYA" or " | ✗ TIDAK PUNYA")
-                    selL.TextColor3=inInv and C.GRN or C.YLW
-                    Placer:PlaceOne(bl)
-                    Notify("Place",bl.n,2)
+                New("TextButton",{Size=UDim2.new(1,0,1,0),BackgroundTransparency=1,
+                    Text="",ZIndex=5,Parent=row}
+                ).MouseButton1Click:Connect(function()
+                    selL.Text = (inInv and "✅ " or "⚠ ")..bl.n.." | "..bl.cat
+                        ..(inInv and " | ✓ PUNYA" or " | ✗ TIDAK PUNYA")
+                    selL.TextColor3 = inInv and C.GRN or C.YLW
+                    -- Coba click tombol GUI inventory
+                    local clicked = false
+                    local entry = INV[bl.n]
+                    if entry and entry.btn and entry.btn.Parent then
+                        pcall(function() entry.btn.MouseButton1Click:Fire() end)
+                        clicked = true
+                    end
+                    Notify(clicked and "Select" or "Select (no btn)",bl.n,2)
                 end)
                 row.MouseEnter:Connect(function() Tw(row,{BackgroundColor3=C.BG3},.1) end)
-                row.MouseLeave:Connect(function() Tw(row,{BackgroundColor3=inInv and Color3.fromRGB(10,20,13) or Color3.fromRGB(11,7,33)},.1) end)
+                row.MouseLeave:Connect(function()
+                    Tw(row,{BackgroundColor3=inInv and Color3.fromRGB(10,20,13) or Color3.fromRGB(11,7,33)},.1)
+                end)
             end
         end
     end
     RBlk("","Semua")
-    sTB.Changed:Connect(function(p) if p=="Text" then pcall(function() RBlk(sTB.Text,getCat()) end) end end)
-    Btn(BkP,"🔄  Refresh",C.CYN,function() RBlk(sTB.Text,getCat()); Notify("Refresh","OK",2) end,"🔄")
+    sTB.Changed:Connect(function(p)
+        if p=="Text" then pcall(function() RBlk(sTB.Text,getCat()) end) end
+    end)
+    Btn(BkP,"🔄  Refresh",C.CYN,function()
+        RBlk(sTB.Text,getCat()); Notify("Refresh","OK",2)
+    end,"🔄")
 
-    -- INFO
-    local InfoP=Page("Info")
-    Sec(InfoP,"ℹ  OxyX v7.0","")
-    local aF=New("Frame",{Size=UDim2.new(1,0,0,110),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=InfoP})
+    -- INFO PAGE
+    local InfoP = Page("Info")
+    Sec(InfoP,"ℹ  OxyX v10.0","")
+    local aF = New("Frame",{Size=UDim2.new(1,0,0,110),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=InfoP})
     New("UICorner",{CornerRadius=UDim.new(0,10),Parent=aF})
     New("UIGradient",{Color=ColorSequence.new({ColorSequenceKeypoint.new(0,Color3.fromRGB(35,12,85)),ColorSequenceKeypoint.new(1,Color3.fromRGB(10,5,32))}),Rotation=135,Parent=aF})
-    local a2=New("ImageLabel",{Size=UDim2.new(0,78,0,78),Position=UDim2.new(0,10,0,16),BackgroundColor3=C.DPRP,BorderSizePixel=0,Image="rbxassetid://7078026274",ScaleType=Enum.ScaleType.Crop,Parent=aF})
-    New("UICorner",{CornerRadius=UDim.new(0,12),Parent=a2}); New("UIStroke",{Color=C.PNK,Thickness=2,Parent=a2})
-    for i,ln in ipairs({{"OxyX BABFT v7.0 — GALAXY",Enum.Font.GothamBold,14,C.WHT},{"File Browser .build & .json",Enum.Font.GothamBold,11,C.LPRP},{"Auto Build dari Inventory BABFT",Enum.Font.Gotham,10,C.TXT1},{"Tab fix: UDim2 1/6 auto-split",Enum.Font.Gotham,10,C.TXT1},{"EXE: "..EXE,Enum.Font.Gotham,10,C.CYN}}) do
-        New("TextLabel",{Size=UDim2.new(1,-103,0,18),Position=UDim2.new(0,100,0,2+(i-1)*20),BackgroundTransparency=1,Text=ln[1],TextColor3=ln[4],Font=ln[2],TextSize=ln[3],TextXAlignment=Enum.TextXAlignment.Left,Parent=aF})
+    local a2 = New("ImageLabel",{Size=UDim2.new(0,78,0,78),Position=UDim2.new(0,10,0,16),BackgroundColor3=C.DPRP,BorderSizePixel=0,Image="rbxassetid://7078026274",ScaleType=Enum.ScaleType.Crop,Parent=aF})
+    New("UICorner",{CornerRadius=UDim.new(0,12),Parent=a2})
+    New("UIStroke",{Color=C.PNK,Thickness=2,Parent=a2})
+    for i, ln in ipairs({
+        {"OxyX BABFT v10.0 — GALAXY",Enum.Font.GothamBold,14,C.WHT},
+        {"Tab fix | Astolfo crossfade | Debug tools",Enum.Font.GothamBold,10,C.LPRP},
+        {"EXE: "..EXE,Enum.Font.Gotham,10,C.CYN},
+        {"Tekan 🔍 Debug di Build tab!",Enum.Font.Gotham,10,C.YLW},
+    }) do
+        New("TextLabel",{Size=UDim2.new(1,-103,0,18),
+            Position=UDim2.new(0,100,0,2+(i-1)*22),
+            BackgroundTransparency=1,Text=ln[1],TextColor3=ln[4],
+            Font=ln[2],TextSize=ln[3],
+            TextXAlignment=Enum.TextXAlignment.Left,Parent=aF})
     end
-    Sec(InfoP,"🔍  Remote Spy","")
-    local _,spyInfoL=Card(InfoP,"Status spy muncul di sini.")
-    RunService.Heartbeat:Connect(function()
-        pcall(function()
-            if SpyData.ready then
-                spyInfoL.Text="✅ "..SpyData.remote.Name.." captured | arg["..SpyData.blockArgIdx.."]"
-                spyInfoL.TextColor3=C.GRN
-            else
-                spyInfoL.Text="⏳ Belum capture | Log: "..#SpyData.log.." remotes | Place 1 block manual!"
-                spyInfoL.TextColor3=#SpyData.log>0 and C.YLW or C.TXT2
-            end
-        end)
-    end)
-
     Sec(InfoP,"⌨  Hotkeys","")
-    local hF=New("Frame",{Size=UDim2.new(1,0,0,88),BackgroundColor3=C.BG2,BorderSizePixel=0,Parent=InfoP})
-    New("UICorner",{CornerRadius=UDim.new(0,8),Parent=hF})
-    New("UIListLayout",{Padding=UDim.new(0,3),Parent=hF}); New("UIPadding",{PaddingAll=UDim.new(0,6),Parent=hF})
-    for _,hk in ipairs({{"Right Shift","Toggle UI"},{"Ctrl+B","Quick Build"},{"Ctrl+E","Export kapal"},{"Ctrl+R","Reset build"}}) do
-        local r2=New("Frame",{Size=UDim2.new(1,0,0,18),BackgroundTransparency=1,Parent=hF})
-        local kb=New("TextLabel",{Size=UDim2.new(0,86,0,16),Position=UDim2.new(0,0,0.5,-8),BackgroundColor3=C.DPRP,BorderSizePixel=0,Text=hk[1],TextColor3=C.LPRP,Font=Enum.Font.Code,TextSize=9,Parent=r2})
+    for _, hk in ipairs({{"Right Shift","Toggle UI"},{"Ctrl+B","Quick Build"},{"Ctrl+R","Reset"}}) do
+        local hF = New("Frame",{Size=UDim2.new(1,0,0,22),BackgroundTransparency=1,Parent=InfoP})
+        local kb = New("TextLabel",{Size=UDim2.new(0,86,0,18),BackgroundColor3=C.DPRP,BorderSizePixel=0,Text=hk[1],TextColor3=C.LPRP,Font=Enum.Font.Code,TextSize=9,Parent=hF})
         New("UICorner",{CornerRadius=UDim.new(0,4),Parent=kb})
-        New("TextLabel",{Size=UDim2.new(1,-94,1,0),Position=UDim2.new(0,92,0,0),BackgroundTransparency=1,Text=hk[2],TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,Parent=r2})
+        New("TextLabel",{Size=UDim2.new(1,-94,1,0),Position=UDim2.new(0,92,0,0),BackgroundTransparency=1,Text=hk[2],TextColor3=C.TXT1,Font=Enum.Font.Gotham,TextSize=10,TextXAlignment=Enum.TextXAlignment.Left,Parent=hF})
     end
-    Slider(InfoP,"Transparansi UI",0,70,5,function(v) pcall(function() Inn.BackgroundTransparency=v/100 end) end)
     Btn(InfoP,"📋  Copy GitHub URL",C.CYN,function()
-        if setclipboard then setclipboard("https://raw.githubusercontent.com/johsua092-ui/oxyX-sc/refs/heads/main/OxyX_BABFT.lua"); Notify("GitHub","URL di-copy!",3) end
+        if setclipboard then
+            setclipboard("https://raw.githubusercontent.com/johsua092-ui/oxyX-sc/refs/heads/main/OxyX_BABFT.lua")
+            Notify("GitHub","URL di-copy!",3)
+        end
     end,"📋")
     Btn(InfoP,"🔄  Reload",C.PRP,function()
-        Notify("Reload","Memuat ulang...",2)
+        Notify("Reload","...",2)
         task.delay(.35,function()
-            pcall(function() bconn:Disconnect(); ringConn:Disconnect(); SG:Destroy() end)
+            pcall(function() bconn:Disconnect(); SG:Destroy() end)
             BuildUI()
         end)
     end,"🔄")
 
-    -- ─── DRAG ───────────────────────────────────
-    local drg=false; local dO=Vector2.new(0,0)
+    -- ── DRAG ─────────────────────────────────
+    local drg = false; local dO = Vector2.new(0,0)
     HDR.InputBegan:Connect(function(i)
-        if i.UserInputType==Enum.UserInputType.MouseButton1 then
-            drg=true; dO=Vector2.new(Mouse.X-MF.AbsolutePosition.X,Mouse.Y-MF.AbsolutePosition.Y)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            drg = true
+            dO = Vector2.new(Mouse.X-MF.AbsolutePosition.X, Mouse.Y-MF.AbsolutePosition.Y)
         end
     end)
-    UIS.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then drg=false end end)
+    UIS.InputEnded:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then drg = false end
+    end)
     RunService.Heartbeat:Connect(function()
         if drg and MF and MF.Parent then pcall(function()
-            local vp=Cam.ViewportSize
-            MF.Position=UDim2.new(0,math.clamp(Mouse.X-dO.X,0,vp.X-MF.AbsoluteSize.X),
-                0,math.clamp(Mouse.Y-dO.Y,0,vp.Y-MF.AbsoluteSize.Y))
+            local vp = Cam.ViewportSize
+            MF.Position = UDim2.new(0,
+                math.clamp(Mouse.X-dO.X, 0, vp.X-MF.AbsoluteSize.X), 0,
+                math.clamp(Mouse.Y-dO.Y, 0, vp.Y-MF.AbsoluteSize.Y))
         end) end
     end)
 
-    -- ─── MINIMIZE / CLOSE ───────────────────────
     MinB.MouseButton1Click:Connect(function()
-        St.minimized=not St.minimized
-        if St.minimized then Tw(MF,{Size=UDim2.new(0,500,0,88)},.28,Enum.EasingStyle.Back); MinB.Text="□"
-        else Tw(MF,{Size=UDim2.new(0,500,0,610)},.32,Enum.EasingStyle.Back); MinB.Text="−" end
+        St.minimized = not St.minimized
+        if St.minimized then
+            Tw(MF,{Size=UDim2.new(0,500,0,88)},.28,Enum.EasingStyle.Back)
+            MinB.Text = "□"
+        else
+            Tw(MF,{Size=UDim2.new(0,500,0,620)},.32,Enum.EasingStyle.Back)
+            MinB.Text = "−"
+        end
     end)
     ClsB.MouseButton1Click:Connect(function()
         Tw(MF,{Size=UDim2.new(0,0,0,0),Position=UDim2.new(0.5,0,0.5,0)},.22)
-        task.delay(.24,function() pcall(function() bconn:Disconnect(); ringConn:Disconnect(); SG:Destroy() end) end)
+        task.delay(.24,function()
+            pcall(function() bconn:Disconnect(); SG:Destroy() end)
+        end)
     end)
 
-    -- ─── HOTKEYS ────────────────────────────────
-    UIS.InputBegan:Connect(function(inp,gp)
+    UIS.InputBegan:Connect(function(inp, gp)
         if gp then return end
         pcall(function()
-            if inp.KeyCode==Enum.KeyCode.RightShift then MF.Visible=not MF.Visible end
-            if inp.KeyCode==Enum.KeyCode.B and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-                if St.buildData then Placer:Build(St.buildData,function(i,tot,bn) if bn=="DONE" then Notify("Done","Selesai! "..tot,3) end end)
+            if inp.KeyCode == Enum.KeyCode.RightShift then
+                MF.Visible = not MF.Visible
+            end
+            if inp.KeyCode == Enum.KeyCode.B
+                and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+                if St.buildData then
+                    Placer:Build(St.buildData,function(i,tot,bn)
+                        if bn=="DONE" then Notify("Done","Selesai!",3) end
+                    end)
                 else Notify("Error","Tidak ada build!",3) end
             end
-            if inp.KeyCode==Enum.KeyCode.E and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-                task.spawn(function()
-                    for _,c in ipairs(WS:GetDescendants()) do
-                        if c:IsA("Model") and c.Name:find(LP.Name,1,true) then
-                            local bl={}
-                            local function sc(p) if p:IsA("BasePart") then local bd=FindBlock(p.Name); local pos=p.CFrame.Position; bl[#bl+1]={id=bd.id,name=bd.n,position={x=pos.X,y=pos.Y,z=pos.Z},size={x=p.Size.X,y=p.Size.Y,z=p.Size.Z},color={r=math.floor(p.Color.R*255),g=math.floor(p.Color.G*255),b=math.floor(p.Color.B*255)}} end for _,ch in ipairs(p:GetChildren()) do sc(ch) end end
-                            for _,ch in ipairs(c:GetChildren()) do sc(ch) end
-                            local j=Ser(c.Name,bl)
-                            if j then local nm=c.Name:gsub(" ","_"); if not WrF("builds/"..nm..".build",j) and setclipboard then setclipboard(j) end; Notify("Export","Kapal ter-export!",3) end; break
-                        end
-                    end
-                end)
-            end
-            if inp.KeyCode==Enum.KeyCode.R and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
-                St.buildData=nil; Notify("Reset","Build data dihapus",2)
+            if inp.KeyCode == Enum.KeyCode.R
+                and UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+                St.buildData = nil
+                Notify("Reset","Build dihapus",2)
             end
         end)
     end)
 
-    -- START
     SwitchTab("Build")
     task.spawn(function()
-        local cnt=ScanInventory()
+        local cnt = ScanInventory()
         pcall(function()
-            invL.Text="✅  "..cnt.." jenis block tersedia"
-            invL.TextColor3=C.GRN
-            InvLbl.Text="Inv: "..cnt.." blocks ✓"
+            invL.Text = "✅  "..cnt.." jenis block"
+            invL.TextColor3 = C.GRN
+            InvLbl.Text = "Inv:"..cnt
         end)
     end)
-    Notify("OxyX v7.0 🌌","Galaxy Final! Tab fix. Inv build. Astolfo animated. "..EXE,5)
-    print("[OxyX v7.0] ✅ | EXE: "..EXE)
+
+    Notify("OxyX v10.0 🌌","Loaded! Klik 🔍 Debug dulu untuk cari remote BABFT.",5)
+    print("[OxyX v10.0] ✅ EXE:"..EXE)
 end
 
--- LAUNCH
-local ok,err=pcall(BuildUI)
+local ok, err = pcall(BuildUI)
 if not ok then
-    warn("[OxyX v7.0] ❌ "..tostring(err))
+    warn("[OxyX v10.0] ❌ "..tostring(err))
     pcall(function()
-        local fg=Instance.new("ScreenGui"); fg.DisplayOrder=99999; fg.IgnoreGuiInset=true; fg.Parent=GP
-        local ff=Instance.new("Frame"); ff.Size=UDim2.new(0,350,0,50); ff.Position=UDim2.new(.5,-175,0,20); ff.BackgroundColor3=Color3.fromRGB(25,0,0); ff.BorderSizePixel=0; ff.Parent=fg
-        local fl=Instance.new("TextLabel"); fl.Size=UDim2.new(1,-8,1,0); fl.Position=UDim2.new(0,4,0,0); fl.BackgroundTransparency=1; fl.Text="[OxyX] ERR: "..tostring(err); fl.TextColor3=Color3.fromRGB(255,80,80); fl.Font=Enum.Font.Gotham; fl.TextSize=11; fl.TextWrapped=true; fl.Parent=ff
-        game:GetService("Debris"):AddItem(fg,12)
+        local fg = Instance.new("ScreenGui")
+        fg.DisplayOrder=99999; fg.IgnoreGuiInset=true; fg.Parent=GP
+        local ff = Instance.new("Frame")
+        ff.Size=UDim2.new(0,380,0,54); ff.Position=UDim2.new(.5,-190,0,20)
+        ff.BackgroundColor3=Color3.fromRGB(25,0,0); ff.BorderSizePixel=0; ff.Parent=fg
+        local fl = Instance.new("TextLabel")
+        fl.Size=UDim2.new(1,-8,1,0); fl.Position=UDim2.new(0,4,0,0)
+        fl.BackgroundTransparency=1; fl.Text="[OxyX] ERR: "..tostring(err)
+        fl.TextColor3=Color3.fromRGB(255,80,80); fl.Font=Enum.Font.Gotham
+        fl.TextSize=11; fl.TextWrapped=true; fl.Parent=ff
+        game:GetService("Debris"):AddItem(fg,15)
     end)
 end
