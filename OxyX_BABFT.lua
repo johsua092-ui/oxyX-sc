@@ -422,91 +422,134 @@ local function ParseBuildData(text)
 end
 
 -- ============================================================
--- SHAPE GENERATORS  (zone-relative coords)
+-- SHAPE GENERATORS  (zone-relative coords, scale + solid params)
+-- scale  = stud spacing between blocks (default 4 = normal block size)
+-- solid  = true to fill interior, false for surface/hollow only
 -- ============================================================
 
-local function MakePlatform(blockName, w, l)
+local function MakePlatform(blockName, w, l, scale)
+    scale = scale or 4
     local bl = {}
     for x = 0, w - 1 do
         for z = 0, l - 1 do
             bl[#bl + 1] = {
                 name     = blockName,
-                position = { x = (x - w / 2) * 4, y = 2, z = (z - l / 2) * 4 }
+                position = { x = (x - w / 2) * scale, y = 2, z = (z - l / 2) * scale }
             }
         end
     end
-    return { version = "1.0", name = "Platform_" .. w .. "x" .. l, author = LP.Name, blocks = bl, welds = {} }
+    return { version = "1.0", name = "Platform_" .. w .. "x" .. l .. "_s" .. scale, author = LP.Name, blocks = bl, welds = {} }
 end
 
-local function MakeBall(blockName, radius)
+local function MakeBall(blockName, radius, scale, solid)
+    scale = scale or 4
     local bl = {}
+    local r2  = radius * radius
+    -- Inner radius for hollow (one shell layer inward)
+    local innerR2 = solid and -1 or ((radius - 1) * (radius - 1))
     for x = -radius, radius do
         for y = -radius, radius do
             for z = -radius, radius do
-                if x*x + y*y + z*z <= radius*radius then
+                local d2 = x*x + y*y + z*z
+                if d2 <= r2 and (solid or d2 > innerR2) then
                     bl[#bl + 1] = {
                         name     = blockName,
-                        position = { x = x * 2, y = y * 2 + radius * 2 + 2, z = z * 2 }
+                        position = { x = x * scale, y = y * scale + radius * scale + 2, z = z * scale }
                     }
                 end
             end
         end
     end
-    return { version = "1.0", name = "Ball_r" .. radius, author = LP.Name, blocks = bl, welds = {} }
+    local tag = solid and "Solid" or "Hollow"
+    return { version = "1.0", name = "Ball_r" .. radius .. "_" .. tag .. "_s" .. scale, author = LP.Name, blocks = bl, welds = {} }
 end
 
-local function MakeBoatHull(blockName, len, w)
+local function MakeBoatHull(blockName, len, w, scale, solid)
+    scale = scale or 4
     local bl = {}
     -- Bottom floor
     for x = 0, len - 1 do
         for z = 0, w - 1 do
             bl[#bl + 1] = {
                 name     = blockName,
-                position = { x = (x - len / 2) * 4, y = 2, z = (z - w / 2) * 4 }
+                position = { x = (x - len / 2) * scale, y = 2, z = (z - w / 2) * scale }
             }
         end
     end
-    -- Side walls
+    -- Side walls (and optionally fill interior)
     for x = 0, len - 1 do
         for y = 1, 3 do
-            bl[#bl + 1] = {
-                name     = blockName,
-                position = { x = (x - len / 2) * 4, y = y * 2 + 2, z = (-w / 2) * 4 }
-            }
-            bl[#bl + 1] = {
-                name     = blockName,
-                position = { x = (x - len / 2) * 4, y = y * 2 + 2, z = (w / 2) * 4 }
-            }
+            if solid then
+                -- Fill all z positions at this height
+                for z = 0, w - 1 do
+                    bl[#bl + 1] = {
+                        name     = blockName,
+                        position = { x = (x - len / 2) * scale, y = y * scale + 2, z = (z - w / 2) * scale }
+                    }
+                end
+            else
+                -- Only outer walls
+                bl[#bl + 1] = {
+                    name     = blockName,
+                    position = { x = (x - len / 2) * scale, y = y * scale + 2, z = (-w / 2) * scale }
+                }
+                bl[#bl + 1] = {
+                    name     = blockName,
+                    position = { x = (x - len / 2) * scale, y = y * scale + 2, z = (w / 2) * scale }
+                }
+            end
         end
     end
-    return { version = "1.0", name = "BoatHull_" .. len .. "x" .. w, author = LP.Name, blocks = bl, welds = {} }
+    -- Front and back walls
+    if not solid then
+        for z = 0, w - 1 do
+            for y = 1, 3 do
+                bl[#bl + 1] = {
+                    name     = blockName,
+                    position = { x = (-len / 2) * scale, y = y * scale + 2, z = (z - w / 2) * scale }
+                }
+                bl[#bl + 1] = {
+                    name     = blockName,
+                    position = { x = (len / 2) * scale, y = y * scale + 2, z = (z - w / 2) * scale }
+                }
+            end
+        end
+    end
+    local tag = solid and "Solid" or "Hull"
+    return { version = "1.0", name = "Boat_" .. len .. "x" .. w .. "_" .. tag .. "_s" .. scale, author = LP.Name, blocks = bl, welds = {} }
 end
 
-local function MakeStaircase(blockName, steps)
+local function MakeStaircase(blockName, steps, scale)
+    scale = scale or 4
     local bl = {}
     for i = 0, steps - 1 do
         bl[#bl + 1] = {
             name     = blockName,
-            position = { x = i * 4, y = i * 2 + 2, z = 0 }
+            position = { x = i * scale, y = i * scale + 2, z = 0 }
         }
     end
-    return { version = "1.0", name = "Staircase_" .. steps, author = LP.Name, blocks = bl, welds = {} }
+    return { version = "1.0", name = "Staircase_" .. steps .. "_s" .. scale, author = LP.Name, blocks = bl, welds = {} }
 end
 
-local function MakePyramid(blockName, base)
+local function MakePyramid(blockName, base, scale, solid)
+    scale = scale or 4
     local bl = {}
     for layer = 0, base - 1 do
         local half = base - layer - 1
         for x = -half, half do
             for z = -half, half do
-                bl[#bl + 1] = {
-                    name     = blockName,
-                    position = { x = x * 4, y = layer * 2 + 2, z = z * 4 }
-                }
+                local isEdge = math.abs(x) == half or math.abs(z) == half
+                if solid or isEdge or layer == 0 then
+                    bl[#bl + 1] = {
+                        name     = blockName,
+                        position = { x = x * scale, y = layer * scale + 2, z = z * scale }
+                    }
+                end
             end
         end
     end
-    return { version = "1.0", name = "Pyramid_" .. base, author = LP.Name, blocks = bl, welds = {} }
+    local tag = solid and "Solid" or "Outline"
+    return { version = "1.0", name = "Pyramid_" .. base .. "_" .. tag .. "_s" .. scale, author = LP.Name, blocks = bl, welds = {} }
 end
 
 -- ============================================================
@@ -588,6 +631,7 @@ local function MakeFolder(path)
     end
 end
 
+-- List only files matching extension in a folder
 local function ListFiles(folder, ext)
     local out = {}
     if not listfiles then return out end
@@ -600,6 +644,42 @@ local function ListFiles(folder, ext)
         end
     end)
     return out
+end
+
+-- List ALL entries in a folder: returns folders[] and files[]
+-- files is filtered to .build and .json only
+local function ListWorkspaceEntries(folderPath)
+    local folders = {}
+    local files   = {}
+    if not listfiles then return folders, files end
+    pcall(function()
+        for _, fullPath in ipairs(listfiles(folderPath)) do
+            local fname = fullPath:match("([^/\\]+)$") or fullPath
+            -- Detect folder
+            local isDir = false
+            pcall(function() isDir = isfolder(fullPath) end)
+            if isDir then
+                folders[#folders + 1] = { name = fname, path = fullPath }
+            else
+                local lo = fname:lower()
+                if lo:sub(-6) == ".build" or lo:sub(-5) == ".json" then
+                    files[#files + 1] = { name = fname, path = fullPath }
+                end
+            end
+        end
+    end)
+    -- Sort alphabetically
+    table.sort(folders, function(a, b) return a.name:lower() < b.name:lower() end)
+    table.sort(files,   function(a, b) return a.name:lower() < b.name:lower() end)
+    return folders, files
+end
+
+-- Get parent path string
+local function ParentPath(path)
+    -- Remove trailing slash if any
+    path = path:gsub("[/\\]+$", "")
+    local parent = path:match("^(.*)[/\\][^/\\]+$")
+    return parent or ""
 end
 
 local function ReadFile(path)
@@ -622,16 +702,18 @@ end
 -- ============================================================
 
 local State = {
-    activeTab   = "Build",
-    buildData   = nil,
-    minimized   = false,
-    shapeType   = "Platform",
-    shapeBlock  = "Wood Block",
-    shapeW      = 5,
-    shapeL      = 8,
-    shapeR      = 3,
-    shapeSteps  = 8,
-    shapePyramid= 5,
+    activeTab    = "Build",
+    buildData    = nil,
+    minimized    = false,
+    shapeType    = "Platform",
+    shapeBlock   = "Wood Block",
+    shapeW       = 5,
+    shapeL       = 8,
+    shapeR       = 3,
+    shapeSteps   = 8,
+    shapePyramid = 5,
+    shapeScale   = 4,     -- stud spacing between blocks (4 = normal size)
+    shapeBlocky  = false, -- true = solid filled, false = hollow/surface only
 }
 
 -- Clean up old GUI instance
@@ -1168,18 +1250,25 @@ local function MakeSlider(parent, labelText, minVal, maxVal, defaultVal, callbac
     end)
 end
 
--- File browser widget: shows .build AND .json files from a folder
-local function MakeFileBrowser(parent, folder, ext, onLoad)
-    local wrap = New("Frame", { Size = UDim2.new(1, 0, 0, 160), BackgroundColor3 = BG2, BorderSizePixel = 0, Parent = parent })
+-- Workspace-aware file browser: can navigate any executor folder
+-- startPath = initial folder (e.g. "builds")
+-- onLoad(filename, content) called when user clicks Load on a file
+local function MakeFileBrowser(parent, startPath, _ext, onLoad)
+    -- Height: header 28 + path bar 28 + list 160 + pad = 222
+    local wrap = New("Frame", {
+        Size = UDim2.new(1, 0, 0, 222),
+        BackgroundColor3 = BG2, BorderSizePixel = 0, Parent = parent
+    })
     New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = wrap })
     New("UIStroke", { Color = PRP, Thickness = 1.5, Parent = wrap })
 
+    -- Header bar
     local hdr = New("Frame", { Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = PRP, BorderSizePixel = 0, Parent = wrap })
     New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = hdr })
     New("Frame", { Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -14), BackgroundColor3 = PRP, BorderSizePixel = 0, Parent = hdr })
     New("TextLabel", {
         Size = UDim2.new(1, -80, 1, 0), Position = UDim2.new(0, 9, 0, 0),
-        BackgroundTransparency = 1, Text = folder .. "/  [" .. ext .. "]",
+        BackgroundTransparency = 1, Text = "Workspace File Browser  (.build / .json)",
         TextColor3 = WHT, Font = Enum.Font.GothamBold, TextSize = 11,
         TextXAlignment = Enum.TextXAlignment.Left, Parent = hdr
     })
@@ -1191,8 +1280,31 @@ local function MakeFileBrowser(parent, folder, ext, onLoad)
     })
     New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = refreshBtn })
 
+    -- Path bar (shows current path + Up button)
+    local pathBar = New("Frame", {
+        Size = UDim2.new(1, 0, 0, 28),
+        Position = UDim2.new(0, 0, 0, 28),
+        BackgroundColor3 = BG3, BorderSizePixel = 0, Parent = wrap
+    })
+    local upBtn = New("TextButton", {
+        Size = UDim2.new(0, 36, 0, 22), Position = UDim2.new(0, 3, 0.5, -11),
+        BackgroundColor3 = c0(50, 30, 100), BorderSizePixel = 0, Text = "Up",
+        TextColor3 = CYN, Font = Enum.Font.GothamBold, TextSize = 10,
+        AutoButtonColor = false, Parent = pathBar
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = upBtn })
+    local pathLabel = New("TextLabel", {
+        Size = UDim2.new(1, -46, 1, 0), Position = UDim2.new(0, 43, 0, 0),
+        BackgroundTransparency = 1, Text = startPath,
+        TextColor3 = YLW, Font = Enum.Font.Code, TextSize = 10,
+        TextXAlignment = Enum.TextXAlignment.Left,
+        TextTruncate = Enum.TextTruncate.AtEnd, Parent = pathBar
+    })
+
+    -- Scrolling file list
     local list = New("ScrollingFrame", {
-        Size = UDim2.new(1, -6, 0, 125), Position = UDim2.new(0, 3, 0, 31),
+        Size = UDim2.new(1, -6, 0, 158),
+        Position = UDim2.new(0, 3, 0, 59),
         BackgroundTransparency = 1, ScrollBarThickness = 3, ScrollBarImageColor3 = PRP,
         CanvasSize = UDim2.new(1, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
         Parent = wrap
@@ -1200,36 +1312,80 @@ local function MakeFileBrowser(parent, folder, ext, onLoad)
     New("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2), Parent = list })
     New("UIPadding", { PaddingAll = UDim.new(0, 3), Parent = list })
 
+    local currentPath = startPath
+
     local function Refresh()
+        -- Clear list
         for _, child in ipairs(list:GetChildren()) do
             if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
                 child:Destroy()
             end
         end
-        local files = ListFiles(folder, ext)
-        -- Also include .json if browsing builds folder
-        if ext == ".build" then
-            for _, jf in ipairs(ListFiles(folder, ".json")) do
-                local dup = false
-                for _, bf in ipairs(files) do if bf.name == jf.name then dup = true; break end end
-                if not dup then files[#files + 1] = jf end
-            end
-        end
-        if #files == 0 then
+        pathLabel.Text = currentPath == "" and "(root)" or currentPath
+
+        local folders, files = ListWorkspaceEntries(currentPath)
+
+        if #folders == 0 and #files == 0 then
             New("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 50), BackgroundTransparency = 1,
-                Text = "No " .. ext .. " files found in '" .. folder .. "' folder.",
+                Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1,
+                Text = "No .build / .json files found.\nCreate a 'builds' folder in your executor workspace.",
                 TextColor3 = TXT2, Font = Enum.Font.Gotham, TextSize = 11,
                 TextWrapped = true, Parent = list
             })
             return
         end
+
+        -- Render folders first
+        for _, folder in ipairs(folders) do
+            local row = New("Frame", {
+                Size = UDim2.new(1, -2, 0, 28),
+                BackgroundColor3 = c0(22, 12, 50), BorderSizePixel = 0, Parent = list
+            })
+            New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
+            -- Folder icon (text)
+            New("TextLabel", {
+                Size = UDim2.new(0, 20, 1, 0), Position = UDim2.new(0, 4, 0, 0),
+                BackgroundTransparency = 1, Text = "[+]",
+                TextColor3 = GLD, Font = Enum.Font.GothamBold, TextSize = 9, Parent = row
+            })
+            New("TextLabel", {
+                Size = UDim2.new(1, -90, 1, 0), Position = UDim2.new(0, 26, 0, 0),
+                BackgroundTransparency = 1, Text = folder.name,
+                TextColor3 = GLD, Font = Enum.Font.GothamBold, TextSize = 11,
+                TextXAlignment = Enum.TextXAlignment.Left,
+                TextTruncate = Enum.TextTruncate.AtEnd, Parent = row
+            })
+            local openBtn = New("TextButton", {
+                Size = UDim2.new(0, 62, 0, 20), Position = UDim2.new(1, -66, 0.5, -10),
+                BackgroundColor3 = c0(40, 20, 100), BorderSizePixel = 0, Text = "Open",
+                TextColor3 = WHT, Font = Enum.Font.GothamBold, TextSize = 10,
+                AutoButtonColor = false, Parent = row
+            })
+            New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = openBtn })
+            openBtn.MouseButton1Click:Connect(function()
+                currentPath = folder.path
+                Refresh()
+            end)
+            row.MouseButton1Click = openBtn.MouseButton1Click
+            row.MouseEnter:Connect(function() Tween(row, { BackgroundColor3 = c0(35, 18, 70) }, 0.1) end)
+            row.MouseLeave:Connect(function() Tween(row, { BackgroundColor3 = c0(22, 12, 50) }, 0.1) end)
+        end
+
+        -- Render .build and .json files
         for _, file in ipairs(files) do
-            local row = New("Frame", { Size = UDim2.new(1, -2, 0, 28), BackgroundColor3 = c0(13, 7, 38), BorderSizePixel = 0, Parent = list })
+            local row = New("Frame", {
+                Size = UDim2.new(1, -2, 0, 28),
+                BackgroundColor3 = c0(13, 7, 38), BorderSizePixel = 0, Parent = list
+            })
             New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
             local labelColor = file.name:lower():sub(-6) == ".build" and GRN or CYN
             New("TextLabel", {
-                Size = UDim2.new(1, -80, 1, 0), Position = UDim2.new(0, 8, 0, 0),
+                Size = UDim2.new(0, 20, 1, 0), Position = UDim2.new(0, 4, 0, 0),
+                BackgroundTransparency = 1, Text = "[ ]",
+                TextColor3 = labelColor, Font = Enum.Font.GothamBold, TextSize = 9, Parent = row
+            })
+            New("TextLabel", {
+                Size = UDim2.new(1, -90, 1, 0), Position = UDim2.new(0, 26, 0, 0),
                 BackgroundTransparency = 1, Text = file.name, TextColor3 = labelColor,
                 Font = Enum.Font.Gotham, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left,
                 TextTruncate = Enum.TextTruncate.AtEnd, Parent = row
@@ -1242,16 +1398,31 @@ local function MakeFileBrowser(parent, folder, ext, onLoad)
             })
             New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = loadBtn })
             loadBtn.MouseButton1Click:Connect(function()
-                local content = ReadFile(file.path) or ReadFile(folder .. "/" .. file.name)
-                if content and onLoad then onLoad(file.name, content)
-                else Notify("Error", "Could not read: " .. file.name, 3) end
+                local content = ReadFile(file.path)
+                if content and onLoad then
+                    onLoad(file.name, content)
+                else
+                    Notify("Error", "Could not read: " .. file.name, 3)
+                end
             end)
             row.MouseEnter:Connect(function() Tween(row, { BackgroundColor3 = BG3 }, 0.1) end)
             row.MouseLeave:Connect(function() Tween(row, { BackgroundColor3 = c0(13, 7, 38) }, 0.1) end)
         end
     end
+
+    -- Up button: navigate to parent folder
+    upBtn.MouseButton1Click:Connect(function()
+        local parent_path = ParentPath(currentPath)
+        currentPath = parent_path
+        Refresh()
+    end)
+
+    refreshBtn.MouseButton1Click:Connect(function()
+        Refresh()
+        Notify("OxyX", "File list refreshed.", 2)
+    end)
+
     Refresh()
-    refreshBtn.MouseButton1Click:Connect(function() Refresh(); Notify("OxyX", "File list refreshed.", 2) end)
 end
 
 -- ============================================================
@@ -1383,36 +1554,67 @@ blockInput.FocusLost:Connect(function()
     end
 end)
 
-MakeSlider(ShapesPage, "Width / Radius / Steps", 1, 15, 5, function(v) State.shapeW = v; State.shapeR = v; State.shapeSteps = v end)
-MakeSlider(ShapesPage, "Length / Base Size",     1, 20, 8, function(v) State.shapeL = v; State.shapePyramid = v end)
+MakeSlider(ShapesPage, "Width / Radius / Steps", 1, 15, 5, function(v)
+    State.shapeW     = v
+    State.shapeR     = v
+    State.shapeSteps = v
+end)
+MakeSlider(ShapesPage, "Length / Base Size", 1, 20, 8, function(v)
+    State.shapeL       = v
+    State.shapePyramid = v
+end)
+MakeSlider(ShapesPage, "Block Scale (studs between blocks)", 2, 12, 4, function(v)
+    State.shapeScale = v
+end)
+
+-- Solid / Hollow toggle
+local solidToggle = MakeButton(ShapesPage, "Mode: Hollow  (click to toggle Solid)", c0(40, 20, 80), nil)
+solidToggle.MouseButton1Click:Connect(function()
+    State.shapeBlocky = not State.shapeBlocky
+    if State.shapeBlocky then
+        solidToggle.Text = "Mode: Solid  (click to toggle Hollow)"
+        Tween(solidToggle, { BackgroundColor3 = c0(10, 60, 10) }, 0.2)
+    else
+        solidToggle.Text = "Mode: Hollow  (click to toggle Solid)"
+        Tween(solidToggle, { BackgroundColor3 = c0(10, 10, 60) }, 0.2)
+    end
+end)
+
+local function BuildCurrentShape()
+    local t   = State.shapeType
+    local bn  = State.shapeBlock
+    local sc  = State.shapeScale
+    local sol = State.shapeBlocky
+    local data
+    if     t == "Platform"  then data = MakePlatform(bn, State.shapeW, State.shapeL, sc)
+    elseif t == "Ball"      then data = MakeBall(bn, State.shapeR, sc, sol)
+    elseif t == "BoatHull"  then data = MakeBoatHull(bn, State.shapeL, State.shapeW, sc, sol)
+    elseif t == "Staircase" then data = MakeStaircase(bn, State.shapeSteps, sc)
+    elseif t == "Pyramid"   then data = MakePyramid(bn, State.shapePyramid, sc, sol)
+    end
+    return data
+end
 
 MakeButton(ShapesPage, "Generate and Build", GRN, function()
-    local data
-    local t = State.shapeType
-    if     t == "Platform"  then data = MakePlatform(State.shapeBlock, State.shapeW, State.shapeL)
-    elseif t == "Ball"      then data = MakeBall(State.shapeBlock, State.shapeR)
-    elseif t == "BoatHull"  then data = MakeBoatHull(State.shapeBlock, State.shapeL, State.shapeW)
-    elseif t == "Staircase" then data = MakeStaircase(State.shapeBlock, State.shapeSteps)
-    elseif t == "Pyramid"   then data = MakePyramid(State.shapeBlock, State.shapePyramid)
-    end
+    local data = BuildCurrentShape()
     if data then
         State.buildData = data
-        Notify("OxyX", t .. "  |  " .. #data.blocks .. " blocks", 2)
+        Notify("OxyX", State.shapeType .. "  |  " .. #data.blocks .. " blocks  |  scale " .. State.shapeScale, 2)
         Builder:Start(data, function(i, tot, name)
             if name == "DONE" then Notify("OxyX", "Shape complete!", 3) end
         end)
     end
 end)
 
-MakeButton(ShapesPage, "Save to builds/ folder", PRP, function()
-    local data
-    local t = State.shapeType
-    if     t == "Platform"  then data = MakePlatform(State.shapeBlock, State.shapeW, State.shapeL)
-    elseif t == "Ball"      then data = MakeBall(State.shapeBlock, State.shapeR)
-    elseif t == "BoatHull"  then data = MakeBoatHull(State.shapeBlock, State.shapeL, State.shapeW)
-    elseif t == "Staircase" then data = MakeStaircase(State.shapeBlock, State.shapeSteps)
-    elseif t == "Pyramid"   then data = MakePyramid(State.shapeBlock, State.shapePyramid)
+MakeButton(ShapesPage, "Preview block count (no build)", CYN, function()
+    local data = BuildCurrentShape()
+    if data then
+        Notify("Preview", data.name .. "  =  " .. #data.blocks .. " blocks", 4)
     end
+end)
+
+MakeButton(ShapesPage, "Save to builds/ folder", PRP, function()
+    local data = BuildCurrentShape()
     if data then
         local json = HttpService:JSONEncode(data)
         if WriteFile("builds/" .. data.name .. ".build", json) then
