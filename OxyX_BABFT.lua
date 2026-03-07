@@ -643,43 +643,9 @@ local function ListFiles(folder, ext)
             end
         end
     end)
+    -- sort alphabetically
+    table.sort(out, function(a, b) return a.name:lower() < b.name:lower() end)
     return out
-end
-
--- List ALL entries in a folder: returns folders[] and files[]
--- files is filtered to .build and .json only
-local function ListWorkspaceEntries(folderPath)
-    local folders = {}
-    local files   = {}
-    if not listfiles then return folders, files end
-    pcall(function()
-        for _, fullPath in ipairs(listfiles(folderPath)) do
-            local fname = fullPath:match("([^/\\]+)$") or fullPath
-            -- Detect folder
-            local isDir = false
-            pcall(function() isDir = isfolder(fullPath) end)
-            if isDir then
-                folders[#folders + 1] = { name = fname, path = fullPath }
-            else
-                local lo = fname:lower()
-                if lo:sub(-6) == ".build" or lo:sub(-5) == ".json" then
-                    files[#files + 1] = { name = fname, path = fullPath }
-                end
-            end
-        end
-    end)
-    -- Sort alphabetically
-    table.sort(folders, function(a, b) return a.name:lower() < b.name:lower() end)
-    table.sort(files,   function(a, b) return a.name:lower() < b.name:lower() end)
-    return folders, files
-end
-
--- Get parent path string
-local function ParentPath(path)
-    -- Remove trailing slash if any
-    path = path:gsub("[/\\]+$", "")
-    local parent = path:match("^(.*)[/\\][^/\\]+$")
-    return parent or ""
 end
 
 local function ReadFile(path)
@@ -1250,179 +1216,289 @@ local function MakeSlider(parent, labelText, minVal, maxVal, defaultVal, callbac
     end)
 end
 
--- Workspace-aware file browser: can navigate any executor folder
--- startPath = initial folder (e.g. "builds")
--- onLoad(filename, content) called when user clicks Load on a file
-local function MakeFileBrowser(parent, startPath, _ext, onLoad)
-    -- Height: header 28 + path bar 28 + list 160 + pad = 222
-    local wrap = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 222),
-        BackgroundColor3 = BG2, BorderSizePixel = 0, Parent = parent
-    })
-    New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = wrap })
-    New("UIStroke", { Color = PRP, Thickness = 1.5, Parent = wrap })
+-- ============================================================
 
-    -- Header bar
-    local hdr = New("Frame", { Size = UDim2.new(1, 0, 0, 28), BackgroundColor3 = PRP, BorderSizePixel = 0, Parent = wrap })
-    New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = hdr })
-    New("Frame", { Size = UDim2.new(1, 0, 0, 14), Position = UDim2.new(0, 0, 1, -14), BackgroundColor3 = PRP, BorderSizePixel = 0, Parent = hdr })
+-- ============================================================
+-- FILE PICKER POPUP  (modal overlay, only .build / .json files)
+-- ============================================================
+
+local function OpenFilePicker(onSelect)
+    -- Dim overlay (click outside to close)
+    local overlay = New("Frame", {
+        Size                   = UDim2.new(1, 0, 1, 0),
+        BackgroundColor3       = c0(0, 0, 0),
+        BackgroundTransparency = 0.45,
+        BorderSizePixel        = 0,
+        ZIndex                 = 500,
+        Parent                 = ScreenGui
+    })
+
+    -- Popup window centred on screen
+    local popup = New("Frame", {
+        Size             = UDim2.new(0, 420, 0, 510),
+        Position         = UDim2.new(0.5, -210, 0.5, -255),
+        BackgroundColor3 = BG0,
+        BorderSizePixel  = 0,
+        ZIndex           = 501,
+        Parent           = ScreenGui
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, 14), Parent = popup })
+    New("UIStroke", { Color = PRP, Thickness = 2, Parent = popup })
+
+    -- Title bar
+    local titleBar = New("Frame", {
+        Size             = UDim2.new(1, 0, 0, 46),
+        BackgroundColor3 = BG1,
+        BorderSizePixel  = 0,
+        ZIndex           = 502,
+        Parent           = popup
+    })
+    New("UICorner", { CornerRadius = UDim.new(0, 14), Parent = titleBar })
+    -- Fill bottom corners of titlebar
+    New("Frame", {
+        Size             = UDim2.new(1, 0, 0, 14),
+        Position         = UDim2.new(0, 0, 1, -14),
+        BackgroundColor3 = BG1,
+        BorderSizePixel  = 0,
+        ZIndex           = 502,
+        Parent           = titleBar
+    })
     New("TextLabel", {
-        Size = UDim2.new(1, -80, 1, 0), Position = UDim2.new(0, 9, 0, 0),
-        BackgroundTransparency = 1, Text = "Workspace File Browser  (.build / .json)",
-        TextColor3 = WHT, Font = Enum.Font.GothamBold, TextSize = 11,
-        TextXAlignment = Enum.TextXAlignment.Left, Parent = hdr
+        Size                   = UDim2.new(1, -140, 1, 0),
+        Position               = UDim2.new(0, 14, 0, 0),
+        BackgroundTransparency = 1,
+        Text                   = "Choose a .build File",
+        TextColor3             = LPRP,
+        Font                   = Enum.Font.GothamBold,
+        TextSize               = 15,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        ZIndex                 = 503,
+        Parent                 = titleBar
     })
+
+    -- Refresh button
     local refreshBtn = New("TextButton", {
-        Size = UDim2.new(0, 64, 0, 20), Position = UDim2.new(1, -68, 0.5, -10),
-        BackgroundColor3 = DPRP, BorderSizePixel = 0, Text = "Refresh",
-        TextColor3 = WHT, Font = Enum.Font.GothamBold, TextSize = 10,
-        AutoButtonColor = false, Parent = hdr
+        Size             = UDim2.new(0, 78, 0, 30),
+        Position         = UDim2.new(1, -120, 0.5, -15),
+        BackgroundColor3 = DPRP,
+        BorderSizePixel  = 0,
+        Text             = "Refresh",
+        TextColor3       = WHT,
+        Font             = Enum.Font.GothamBold,
+        TextSize         = 12,
+        AutoButtonColor  = false,
+        ZIndex           = 503,
+        Parent           = titleBar
     })
-    New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = refreshBtn })
+    New("UICorner", { CornerRadius = UDim.new(0, 8), Parent = refreshBtn })
 
-    -- Path bar (shows current path + Up button)
-    local pathBar = New("Frame", {
-        Size = UDim2.new(1, 0, 0, 28),
-        Position = UDim2.new(0, 0, 0, 28),
-        BackgroundColor3 = BG3, BorderSizePixel = 0, Parent = wrap
+    -- Close button
+    local closeBtn = New("TextButton", {
+        Size             = UDim2.new(0, 32, 0, 30),
+        Position         = UDim2.new(1, -38, 0.5, -15),
+        BackgroundColor3 = c0(160, 20, 20),
+        BorderSizePixel  = 0,
+        Text             = "X",
+        TextColor3       = WHT,
+        Font             = Enum.Font.GothamBold,
+        TextSize         = 14,
+        AutoButtonColor  = false,
+        ZIndex           = 503,
+        Parent           = titleBar
     })
-    local upBtn = New("TextButton", {
-        Size = UDim2.new(0, 36, 0, 22), Position = UDim2.new(0, 3, 0.5, -11),
-        BackgroundColor3 = c0(50, 30, 100), BorderSizePixel = 0, Text = "Up",
-        TextColor3 = CYN, Font = Enum.Font.GothamBold, TextSize = 10,
-        AutoButtonColor = false, Parent = pathBar
-    })
-    New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = upBtn })
-    local pathLabel = New("TextLabel", {
-        Size = UDim2.new(1, -46, 1, 0), Position = UDim2.new(0, 43, 0, 0),
-        BackgroundTransparency = 1, Text = startPath,
-        TextColor3 = YLW, Font = Enum.Font.Code, TextSize = 10,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        TextTruncate = Enum.TextTruncate.AtEnd, Parent = pathBar
+    New("UICorner", { CornerRadius = UDim.new(0, 8), Parent = closeBtn })
+
+    -- Info row: folder path + count
+    local infoLabel = New("TextLabel", {
+        Size                   = UDim2.new(1, -20, 0, 20),
+        Position               = UDim2.new(0, 10, 0, 50),
+        BackgroundTransparency = 1,
+        Text                   = "builds/  |  scanning...",
+        TextColor3             = TXT2,
+        Font                   = Enum.Font.Code,
+        TextSize               = 10,
+        TextXAlignment         = Enum.TextXAlignment.Left,
+        ZIndex                 = 502,
+        Parent                 = popup
     })
 
-    -- Scrolling file list
-    local list = New("ScrollingFrame", {
-        Size = UDim2.new(1, -6, 0, 158),
-        Position = UDim2.new(0, 3, 0, 59),
-        BackgroundTransparency = 1, ScrollBarThickness = 3, ScrollBarImageColor3 = PRP,
-        CanvasSize = UDim2.new(1, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
-        Parent = wrap
+    -- Scroll list
+    local scroll = New("ScrollingFrame", {
+        Size                  = UDim2.new(1, -16, 1, -80),
+        Position              = UDim2.new(0, 8, 0, 74),
+        BackgroundColor3      = BG1,
+        BorderSizePixel       = 0,
+        ScrollBarThickness    = 5,
+        ScrollBarImageColor3  = PRP,
+        CanvasSize            = UDim2.new(1, 0, 0, 0),
+        AutomaticCanvasSize   = Enum.AutomaticSize.Y,
+        ZIndex                = 502,
+        Parent                = popup
     })
-    New("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2), Parent = list })
-    New("UIPadding", { PaddingAll = UDim.new(0, 3), Parent = list })
+    New("UICorner", { CornerRadius = UDim.new(0, 8), Parent = scroll })
+    New("UIListLayout", {
+        SortOrder = Enum.SortOrder.LayoutOrder,
+        Padding   = UDim.new(0, 7),
+        Parent    = scroll
+    })
+    New("UIPadding", {
+        PaddingLeft   = UDim.new(0, 8),
+        PaddingRight  = UDim.new(0, 8),
+        PaddingTop    = UDim.new(0, 10),
+        PaddingBottom = UDim.new(0, 10),
+        Parent        = scroll
+    })
 
-    local currentPath = startPath
+    local function Close()
+        pcall(function() overlay:Destroy() end)
+        pcall(function() popup:Destroy() end)
+    end
 
-    local function Refresh()
-        -- Clear list
-        for _, child in ipairs(list:GetChildren()) do
+    local function Populate()
+        -- Clear existing rows
+        for _, child in ipairs(scroll:GetChildren()) do
             if not child:IsA("UIListLayout") and not child:IsA("UIPadding") then
                 child:Destroy()
             end
         end
-        pathLabel.Text = currentPath == "" and "(root)" or currentPath
 
-        local folders, files = ListWorkspaceEntries(currentPath)
+        local files = ListFiles("builds", ".build")
+        -- Also pick up .json from builds folder
+        for _, jf in ipairs(ListFiles("builds", ".json")) do
+            local dup = false
+            for _, bf in ipairs(files) do
+                if bf.name == jf.name then dup = true; break end
+            end
+            if not dup then files[#files + 1] = jf end
+        end
+        table.sort(files, function(a, b) return a.name:lower() < b.name:lower() end)
 
-        if #folders == 0 and #files == 0 then
+        if #files == 0 then
+            infoLabel.Text      = "builds/  |  no files found"
+            infoLabel.TextColor3 = RED
             New("TextLabel", {
-                Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1,
-                Text = "No .build / .json files found.\nCreate a 'builds' folder in your executor workspace.",
-                TextColor3 = TXT2, Font = Enum.Font.Gotham, TextSize = 11,
-                TextWrapped = true, Parent = list
+                Size                   = UDim2.new(1, 0, 0, 80),
+                BackgroundTransparency = 1,
+                Text                   = "No .build files found.\n\nPlace your .build files inside the\n'builds' folder in your executor.",
+                TextColor3             = TXT2,
+                Font                   = Enum.Font.Gotham,
+                TextSize               = 12,
+                TextWrapped            = true,
+                TextXAlignment         = Enum.TextXAlignment.Center,
+                ZIndex                 = 503,
+                Parent                 = scroll
             })
             return
         end
 
-        -- Render folders first
-        for _, folder in ipairs(folders) do
-            local row = New("Frame", {
-                Size = UDim2.new(1, -2, 0, 28),
-                BackgroundColor3 = c0(22, 12, 50), BorderSizePixel = 0, Parent = list
-            })
-            New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
-            -- Folder icon (text)
-            New("TextLabel", {
-                Size = UDim2.new(0, 20, 1, 0), Position = UDim2.new(0, 4, 0, 0),
-                BackgroundTransparency = 1, Text = "[+]",
-                TextColor3 = GLD, Font = Enum.Font.GothamBold, TextSize = 9, Parent = row
-            })
-            New("TextLabel", {
-                Size = UDim2.new(1, -90, 1, 0), Position = UDim2.new(0, 26, 0, 0),
-                BackgroundTransparency = 1, Text = folder.name,
-                TextColor3 = GLD, Font = Enum.Font.GothamBold, TextSize = 11,
-                TextXAlignment = Enum.TextXAlignment.Left,
-                TextTruncate = Enum.TextTruncate.AtEnd, Parent = row
-            })
-            local openBtn = New("TextButton", {
-                Size = UDim2.new(0, 62, 0, 20), Position = UDim2.new(1, -66, 0.5, -10),
-                BackgroundColor3 = c0(40, 20, 100), BorderSizePixel = 0, Text = "Open",
-                TextColor3 = WHT, Font = Enum.Font.GothamBold, TextSize = 10,
-                AutoButtonColor = false, Parent = row
-            })
-            New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = openBtn })
-            openBtn.MouseButton1Click:Connect(function()
-                currentPath = folder.path
-                Refresh()
-            end)
-            row.MouseButton1Click = openBtn.MouseButton1Click
-            row.MouseEnter:Connect(function() Tween(row, { BackgroundColor3 = c0(35, 18, 70) }, 0.1) end)
-            row.MouseLeave:Connect(function() Tween(row, { BackgroundColor3 = c0(22, 12, 50) }, 0.1) end)
-        end
+        infoLabel.Text      = "builds/  |  " .. #files .. " file" .. (#files == 1 and "" or "s")
+        infoLabel.TextColor3 = GRN
 
-        -- Render .build and .json files
         for _, file in ipairs(files) do
-            local row = New("Frame", {
-                Size = UDim2.new(1, -2, 0, 28),
-                BackgroundColor3 = c0(13, 7, 38), BorderSizePixel = 0, Parent = list
+            local isBuild = file.name:lower():sub(-6) == ".build"
+            local bgCol   = isBuild and c0(10, 20, 10) or c0(8, 14, 26)
+            local acCol   = isBuild and GRN or CYN
+            local labelTxt = file.name:gsub("%.build$", ""):gsub("%.json$", "")
+
+            -- Card
+            local card = New("Frame", {
+                Size             = UDim2.new(1, 0, 0, 66),
+                BackgroundColor3 = bgCol,
+                BorderSizePixel  = 0,
+                ZIndex           = 503,
+                Parent           = scroll
             })
-            New("UICorner", { CornerRadius = UDim.new(0, 6), Parent = row })
-            local labelColor = file.name:lower():sub(-6) == ".build" and GRN or CYN
+            New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = card })
+            New("UIStroke", { Color = acCol, Thickness = 1, Parent = card })
+
+            -- Left accent stripe
+            New("Frame", {
+                Size             = UDim2.new(0, 4, 0.65, 0),
+                Position         = UDim2.new(0, 0, 0.175, 0),
+                BackgroundColor3 = acCol,
+                BorderSizePixel  = 0,
+                ZIndex           = 504,
+                Parent           = card
+            })
+
+            -- File display name (no extension)
             New("TextLabel", {
-                Size = UDim2.new(0, 20, 1, 0), Position = UDim2.new(0, 4, 0, 0),
-                BackgroundTransparency = 1, Text = "[ ]",
-                TextColor3 = labelColor, Font = Enum.Font.GothamBold, TextSize = 9, Parent = row
+                Size                   = UDim2.new(1, -86, 0, 28),
+                Position               = UDim2.new(0, 14, 0, 8),
+                BackgroundTransparency = 1,
+                Text                   = labelTxt,
+                TextColor3             = WHT,
+                Font                   = Enum.Font.GothamBold,
+                TextSize               = 13,
+                TextXAlignment         = Enum.TextXAlignment.Left,
+                TextTruncate           = Enum.TextTruncate.AtEnd,
+                ZIndex                 = 504,
+                Parent                 = card
             })
+
+            -- Subtitle: extension type + filename
             New("TextLabel", {
-                Size = UDim2.new(1, -90, 1, 0), Position = UDim2.new(0, 26, 0, 0),
-                BackgroundTransparency = 1, Text = file.name, TextColor3 = labelColor,
-                Font = Enum.Font.Gotham, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left,
-                TextTruncate = Enum.TextTruncate.AtEnd, Parent = row
+                Size                   = UDim2.new(1, -86, 0, 20),
+                Position               = UDim2.new(0, 14, 0, 36),
+                BackgroundTransparency = 1,
+                Text                   = (isBuild and ".build" or ".json") .. "  |  builds/" .. file.name,
+                TextColor3             = TXT2,
+                Font                   = Enum.Font.Code,
+                TextSize               = 9,
+                TextXAlignment         = Enum.TextXAlignment.Left,
+                TextTruncate           = Enum.TextTruncate.AtEnd,
+                ZIndex                 = 504,
+                Parent                 = card
             })
+
+            -- Load button
             local loadBtn = New("TextButton", {
-                Size = UDim2.new(0, 62, 0, 20), Position = UDim2.new(1, -66, 0.5, -10),
-                BackgroundColor3 = PRP, BorderSizePixel = 0, Text = "Load",
-                TextColor3 = WHT, Font = Enum.Font.GothamBold, TextSize = 10,
-                AutoButtonColor = false, Parent = row
+                Size             = UDim2.new(0, 68, 0, 36),
+                Position         = UDim2.new(1, -72, 0.5, -18),
+                BackgroundColor3 = isBuild and c0(20, 110, 20) or c0(0, 80, 140),
+                BorderSizePixel  = 0,
+                Text             = "Load",
+                TextColor3       = WHT,
+                Font             = Enum.Font.GothamBold,
+                TextSize         = 13,
+                AutoButtonColor  = false,
+                ZIndex           = 504,
+                Parent           = card
             })
-            New("UICorner", { CornerRadius = UDim.new(0, 5), Parent = loadBtn })
-            loadBtn.MouseButton1Click:Connect(function()
+            New("UICorner", { CornerRadius = UDim.new(0, 8), Parent = loadBtn })
+
+            local function DoLoad()
                 local content = ReadFile(file.path)
-                if content and onLoad then
-                    onLoad(file.name, content)
+                if content then
+                    Close()
+                    if onSelect then onSelect(file.name, content) end
                 else
                     Notify("Error", "Could not read: " .. file.name, 3)
                 end
+            end
+
+            loadBtn.MouseButton1Click:Connect(DoLoad)
+
+            -- Hover effects
+            card.MouseEnter:Connect(function()
+                Tween(card, { BackgroundColor3 = isBuild and c0(16, 36, 16) or c0(12, 20, 44) }, 0.12)
+                Tween(loadBtn, { BackgroundColor3 = isBuild and c0(30, 150, 30) or c0(0, 110, 180) }, 0.12)
             end)
-            row.MouseEnter:Connect(function() Tween(row, { BackgroundColor3 = BG3 }, 0.1) end)
-            row.MouseLeave:Connect(function() Tween(row, { BackgroundColor3 = c0(13, 7, 38) }, 0.1) end)
+            card.MouseLeave:Connect(function()
+                Tween(card, { BackgroundColor3 = bgCol }, 0.12)
+                Tween(loadBtn, { BackgroundColor3 = isBuild and c0(20, 110, 20) or c0(0, 80, 140) }, 0.12)
+            end)
         end
     end
 
-    -- Up button: navigate to parent folder
-    upBtn.MouseButton1Click:Connect(function()
-        local parent_path = ParentPath(currentPath)
-        currentPath = parent_path
-        Refresh()
-    end)
-
+    closeBtn.MouseButton1Click:Connect(Close)
+    overlay.MouseButton1Click:Connect(Close)
     refreshBtn.MouseButton1Click:Connect(function()
-        Refresh()
+        Populate()
         Notify("OxyX", "File list refreshed.", 2)
     end)
 
-    Refresh()
+    Populate()
 end
 
 -- ============================================================
@@ -1431,34 +1507,69 @@ end
 
 local BuildPage = MakePage("Build")
 
-SectionHeader(BuildPage, "Load .build / .json file  (from builds/ folder)")
-MakeFileBrowser(BuildPage, "builds", ".build", function(fname, content)
-    local data, err = ParseBuildData(content)
-    if data then
-        State.buildData = data
-        Notify("Loaded", fname .. "  |  " .. #data.blocks .. " blocks", 3)
-        StatusLabel.Text = "Loaded: " .. fname .. "  |  " .. #data.blocks .. " blocks"
-        -- Auto-start build
-        local total = #data.blocks
-        ProgressBar.Visible  = true
-        ProgressLabel.Visible = true
-        ProgressFill.Size    = UDim2.new(0, 0, 1, 0)
-        Builder:Start(data, function(i, tot, name, ok)
-            pcall(function()
-                if name == "DONE" then
-                    ProgressLabel.Text = "Complete!  Placed: " .. Builder.placed .. "  Failed: " .. Builder.failed
-                    StatusLabel.Text   = "Done!  " .. Builder.placed .. "/" .. tot
-                    task.delay(5, function() pcall(function() ProgressBar.Visible = false; ProgressLabel.Visible = false end) end)
-                else
-                    Tween(ProgressFill, { Size = UDim2.new(i / tot, 0, 1, 0) }, 0.1)
-                    ProgressLabel.Text = "[" .. i .. "/" .. tot .. "]  " .. name
-                    StatusLabel.Text   = "Building  [" .. i .. "/" .. tot .. "]"
-                end
-            end)
-        end)
-    else
-        Notify("Error", err or "Parse failed", 3)
-    end
+SectionHeader(BuildPage, "Build File")
+
+-- Selected file display card
+local selCard = New("Frame", {
+    Size             = UDim2.new(1, 0, 0, 60),
+    BackgroundColor3 = BG2,
+    BorderSizePixel  = 0,
+    Parent           = BuildPage
+})
+New("UICorner", { CornerRadius = UDim.new(0, 10), Parent = selCard })
+local selStroke = New("UIStroke", { Color = BG3, Thickness = 1.5, Parent = selCard })
+
+New("Frame", {
+    Size             = UDim2.new(0, 4, 0.65, 0),
+    Position         = UDim2.new(0, 0, 0.175, 0),
+    BackgroundColor3 = TXT2,
+    BorderSizePixel  = 0,
+    Parent           = selCard
+})
+
+local selNameLabel = New("TextLabel", {
+    Size                   = UDim2.new(1, -20, 0, 28),
+    Position               = UDim2.new(0, 14, 0, 8),
+    BackgroundTransparency = 1,
+    Text                   = "No file selected",
+    TextColor3             = TXT2,
+    Font                   = Enum.Font.GothamBold,
+    TextSize               = 13,
+    TextXAlignment         = Enum.TextXAlignment.Left,
+    TextTruncate           = Enum.TextTruncate.AtEnd,
+    Parent                 = selCard
+})
+local selInfoLabel = New("TextLabel", {
+    Size                   = UDim2.new(1, -20, 0, 18),
+    Position               = UDim2.new(0, 14, 0, 38),
+    BackgroundTransparency = 1,
+    Text                   = "Click 'Choose .build File' below",
+    TextColor3             = TXT2,
+    Font                   = Enum.Font.Gotham,
+    TextSize               = 10,
+    TextXAlignment         = Enum.TextXAlignment.Left,
+    Parent                 = selCard
+})
+
+-- The main picker button
+MakeButton(BuildPage, "Choose .build File", PRP, function()
+    OpenFilePicker(function(fname, content)
+        local data, err = ParseBuildData(content)
+        if data then
+            State.buildData = data
+            local displayName = fname:gsub("%.build$", ""):gsub("%.json$", "")
+            selNameLabel.Text      = displayName
+            selNameLabel.TextColor3 = GRN
+            selInfoLabel.Text      = #data.blocks .. " blocks  |  builds/" .. fname
+            selInfoLabel.TextColor3 = TXT1
+            Tween(selStroke, { Color = GRN }, 0.3)
+            Tween(selCard,   { BackgroundColor3 = c0(10, 22, 10) }, 0.3)
+            Notify("Loaded", displayName .. "  |  " .. #data.blocks .. " blocks", 3)
+            StatusLabel.Text = "Loaded: " .. displayName .. "  |  " .. #data.blocks .. " blocks"
+        else
+            Notify("Error", err or "Parse failed", 3)
+        end
+    end)
 end)
 
 SectionHeader(BuildPage, "Paste JSON manually")
@@ -1467,47 +1578,57 @@ MakeButton(BuildPage, "Parse and Load", CYN, function()
     local data, err = ParseBuildData(pasteInput.Text)
     if data then
         State.buildData = data
-        Notify("Loaded", (data.name or "Build") .. "  |  " .. #data.blocks .. " blocks", 3)
+        local name = data.name or "Pasted Build"
+        selNameLabel.Text      = name
+        selNameLabel.TextColor3 = CYN
+        selInfoLabel.Text      = #data.blocks .. " blocks  (pasted JSON)"
+        selInfoLabel.TextColor3 = TXT1
+        Tween(selStroke, { Color = CYN }, 0.3)
+        Tween(selCard,   { BackgroundColor3 = c0(8, 14, 26) }, 0.3)
+        Notify("Loaded", name .. "  |  " .. #data.blocks .. " blocks", 3)
     else
         Notify("Error", err or "Parse failed", 3)
     end
 end)
 
-SectionHeader(BuildPage, "Quick test build")
+SectionHeader(BuildPage, "Quick test")
 MakeButton(BuildPage, "Generate 5x5 Platform (test)", BG3, function()
-    State.buildData = MakePlatform("Wood Block", 5, 5)
-    Notify("OxyX", "5x5 platform ready (25 blocks)", 3)
-    StatusLabel.Text = "Ready: 5x5 Platform  |  25 blocks"
+    State.buildData = MakePlatform("Wood Block", 5, 5, 4)
+    selNameLabel.Text      = "Platform_5x5  (test)"
+    selNameLabel.TextColor3 = YLW
+    selInfoLabel.Text      = "25 blocks  |  generated test shape"
+    selInfoLabel.TextColor3 = TXT1
+    Tween(selStroke, { Color = YLW }, 0.3)
+    Tween(selCard,   { BackgroundColor3 = c0(22, 18, 5) }, 0.3)
+    Notify("OxyX", "5x5 Platform ready - 25 blocks", 3)
+    StatusLabel.Text = "Ready: Platform_5x5  |  25 blocks"
 end)
 
-local _, buildStatusLabel = MakeCard(BuildPage, "No build data loaded")
-RunService.Heartbeat:Connect(function()
-    if State.buildData then
-        pcall(function()
-            buildStatusLabel.Text      = "Ready: " .. (State.buildData.name or "?") .. "  |  " .. #State.buildData.blocks .. " blocks"
-            buildStatusLabel.TextColor3 = GRN
-        end)
-    end
+MakeSlider(BuildPage, "Delay per block (ms)", 100, 2000, 300, function(v)
+    Builder.delay = v / 1000
 end)
-
-MakeSlider(BuildPage, "Delay per block (ms)", 100, 2000, 300, function(v) Builder.delay = v / 1000 end)
 
 MakeButton(BuildPage, "START AUTO BUILD", GRN, function()
     if not State.buildData then
-        Notify("Error", "No build data! Load a file or generate a shape first.", 3)
+        Notify("Error", "No file loaded! Click 'Choose .build File' first.", 3)
         return
     end
     local total = #State.buildData.blocks
-    ProgressBar.Visible  = true
+    ProgressBar.Visible   = true
     ProgressLabel.Visible = true
-    ProgressFill.Size    = UDim2.new(0, 0, 1, 0)
-    StatusLabel.Text     = "Building  0/" .. total
+    ProgressFill.Size     = UDim2.new(0, 0, 1, 0)
+    StatusLabel.Text      = "Building  0/" .. total
     Builder:Start(State.buildData, function(i, tot, name, ok)
         pcall(function()
             if name == "DONE" then
                 ProgressLabel.Text = "Complete!  Placed: " .. Builder.placed .. "  Failed: " .. Builder.failed
                 StatusLabel.Text   = "Done!  " .. Builder.placed .. "/" .. tot
-                task.delay(5, function() pcall(function() ProgressBar.Visible = false; ProgressLabel.Visible = false end) end)
+                task.delay(5, function()
+                    pcall(function()
+                        ProgressBar.Visible   = false
+                        ProgressLabel.Visible = false
+                    end)
+                end)
             else
                 Tween(ProgressFill, { Size = UDim2.new(i / tot, 0, 1, 0) }, 0.1)
                 ProgressLabel.Text = "[" .. i .. "/" .. tot .. "]  " .. name
@@ -1518,14 +1639,18 @@ MakeButton(BuildPage, "START AUTO BUILD", GRN, function()
 end)
 
 MakeButton(BuildPage, "STOP BUILD", YLW, function() Builder:Stop() end)
+
 MakeButton(BuildPage, "Clear Data", RED, function()
-    State.buildData         = nil
-    buildStatusLabel.Text       = "No build data loaded"
-    buildStatusLabel.TextColor3 = TXT1
+    State.buildData        = nil
+    selNameLabel.Text      = "No file selected"
+    selNameLabel.TextColor3 = TXT2
+    selInfoLabel.Text      = "Click 'Choose .build File' below"
+    selInfoLabel.TextColor3 = TXT2
+    Tween(selStroke, { Color = BG3 }, 0.3)
+    Tween(selCard,   { BackgroundColor3 = BG2 }, 0.3)
     Notify("OxyX", "Build data cleared.", 2)
 end)
 
--- ============================================================
 -- PAGE: SHAPES
 -- ============================================================
 
@@ -1631,31 +1756,33 @@ end)
 -- ============================================================
 
 local ConvertPage = MakePage("Convert")
-SectionHeader(ConvertPage, "Import JSON file  (from json/ folder)")
-MakeFileBrowser(ConvertPage, "json", ".json", function(fname, content)
-    local ok, raw = pcall(function() return HttpService:JSONDecode(content) end)
-    if not ok then Notify("Error", "Invalid JSON file", 3); return end
-    if raw.blocks and #raw.blocks > 0 then
-        State.buildData = raw
-        Notify("Imported", fname .. "  |  " .. #raw.blocks .. " blocks", 3)
-        return
-    end
-    local bl = {}
-    local function scan(obj, depth)
-        if type(obj) ~= "table" or depth > 8 then return end
-        if (obj.ClassName == "Part" or obj.ClassName == "MeshPart") then
-            local bd = FindBlock(obj.Name or obj.name or "")
-            bl[#bl + 1] = { name = bd.n, position = { x = 0, y = #bl * 2, z = 0 } }
+SectionHeader(ConvertPage, "Import JSON / .build file")
+MakeButton(ConvertPage, "Browse Files to Import", CYN, function()
+    FilePicker:Open(ScreenGui, function(fname, content)
+        local ok, raw = pcall(function() return HttpService:JSONDecode(content) end)
+        if not ok then Notify("Error", "Invalid JSON file", 3); return end
+        if raw.blocks and #raw.blocks > 0 then
+            State.buildData = raw
+            Notify("Imported", fname .. "  |  " .. #raw.blocks .. " blocks", 3)
+            return
         end
-        for _, v in pairs(obj) do if type(v) == "table" then scan(v, depth + 1) end end
-    end
-    scan(raw, 0)
-    if #bl > 0 then
-        State.buildData = { version = "1.0", name = fname, author = LP.Name, blocks = bl, welds = {} }
-        Notify("Converted", #bl .. " blocks extracted", 3)
-    else
-        Notify("Error", "No blocks found in file", 3)
-    end
+        local bl = {}
+        local function scan(obj, depth)
+            if type(obj) ~= "table" or depth > 8 then return end
+            if (obj.ClassName == "Part" or obj.ClassName == "MeshPart") then
+                local bd = FindBlock(obj.Name or obj.name or "")
+                bl[#bl + 1] = { name = bd.n, position = { x = 0, y = #bl * 2, z = 0 } }
+            end
+            for _, v in pairs(obj) do if type(v) == "table" then scan(v, depth + 1) end end
+        end
+        scan(raw, 0)
+        if #bl > 0 then
+            State.buildData = { version = "1.0", name = fname, author = LP.Name, blocks = bl, welds = {} }
+            Notify("Converted", #bl .. " blocks extracted", 3)
+        else
+            Notify("Error", "No blocks found in file", 3)
+        end
+    end)
 end)
 
 MakeButton(ConvertPage, "Export my boat (zone-relative)", PRP, function()
